@@ -1,4 +1,4 @@
-# Defines boundary conditions, etc for cell macrodomain
+# Defines boundary conditions, etc for microdomain
 from dolfin import *
 
 class empty:pass
@@ -33,11 +33,21 @@ class CellularDomain:
   def AssignBC(self):
     problem = self.problem
 
-    print "Add in LCC"
-    if(type=="scalar"):
-        dudn = Constant(2.)
-    elif(type=="field"):
-        dudn = Constant(2.,2.,2.)
+    print "Probably don't have the right BCs yet"
+    if(self.type=="scalar"):
+        u0 = Constant(0.)
+        #u1 = Expression("1 + x[0]*x[0] + x[1]*x[1]")
+        # I don't think I want any specific BCs here for homog prob.
+        u1 = Constant(1.)
+    elif(self.type="field"):
+        u0 = Constant((0.,0,0.)
+        u1 = Constant((1.,1.,1.))
 
-    problem.dudn = dudn  # assigning a flux on the entire boundary for now
+
+    bc1 = DirichletBC(problem.V,u0,problem.subdomains,1)
+    bc2 = DirichletBC(problem.V,u1,problem.subdomains,5)
+    # neum
+    #bc1 = DirichletBC(self.V,Constant(0.),self.subdomains,1)
+    problem.bcs = [bc1,bc2]
+
 
