@@ -67,6 +67,7 @@ def solveHomog(problem):
   a = LHS
   
   ## RHS terms 
+  print "WATNING: still confused about the BC here. Johan says ==0, Gary says we have complicated Jacobian term"
   n = FacetNormal(mesh)
   L = inner( n,v ) * ds 
   

@@ -22,6 +22,19 @@ def u0_boundary(x, on_boundary):
 ## solv. homog cell
 def solve_homogeneous_unit(problem,type="scalar"):
 
+  ## debug mode
+  debug=1
+  if(debug==1):
+    print "In debug mode - using stored values"
+    d_eff = np.array([2.,2.,2.])
+    problem.d_eff = d_eff
+    V = FunctionSpace(problem.mesh,"CG",1)
+    u = Function(V)
+    u.vector()[:] = 1
+    problem.x = u
+    return 
+
+  ## solve homog
   if(type=="scalar"):
     scalar.solveHomog(problem)
     D_eff = scalar.compute_eff_diff(problem)
@@ -40,18 +53,21 @@ def solve_homogeneous_unit(problem,type="scalar"):
 ## Coupled problem (need to check on neumann confs) 
 # Here I'm just trying to get a general time-dep soln to work. NOthing is
 # relevant to my problem yet 
-def solve_homogenized(cell,mol):
+def solve_homogenized_whole(cell,mol):
 
   # TODO using these for now, but not correct 
   # TODO probably want to pull values from 'x' used in homogeneous solution 
   u0 = 1.
   cell.bc = DirichletBC(cell.V, u0, u0_boundary)
+  # TODO add in LCC instead
+  dudn = -4  # assigning a flux on the entire boundary for now
 
   
   out  = File(problem.name+"_homogenized.pvd") 
 
 
   print "WARNING: overwriting anistropic D const. Needs to be fixed"
+  print "WARNING: must adjust both unit cell and whole to enforce VecFunc basis"
   cell.d_eff = cell.d_eff[0]
   # set up time dep form 
   
@@ -83,6 +99,9 @@ def solve_homogenized(cell,mol):
   #mol.u.vector()[:] = 0.5*u0
   #mol.x = x
   
+  # for multiple bcs
+  # for bc in bcs:
+  #   bc.apply(A,b)
 
   dt =0.5 
   t = 0.
@@ -114,9 +133,13 @@ def solve_homogenized(cell,mol):
     A *= parms.d*dt
     A += M
 
-    # TODO - note: ds needs to be limited to boundary between cell and microdomains [eq use ds(2)]
+    print" TODO - note: ds needs to be limited to boundary between cell and microdomains [eq use ds(2)]"
     b[:] = 0.0
+    # cell + molec coupling
     E = cell.d_eff * assemble( jcell * cell.v * ds, mesh=cell.mesh) 
+    # outer cell boundary
+    # TODO verify
+    E = assemble(dcdn*cell.v*ds,mesh=cell.mesh)
     b[:] = E 
     
 
@@ -165,7 +188,6 @@ def domost():
 def Test():
   root = "/home/huskeypm/scratch/homog/mol/"
 
-  ## unit cell solutions 
   # celular domain 
   prefix = "cell"
   meshFileOuter = root+prefix+"_mesh.xml.gz"
@@ -191,15 +213,14 @@ def Test():
   # solve on actual cell domain 
   # TODO Need to add
   print "Quit until whole cell mesh is loaded"
-  quit()
   prefix = "wholecell"
   meshFileOuter = root+prefix+"_mesh.xml.gz"
   subdomainFileOuter = root+prefix+"_subdomains.xml.gz"
   cellDomWhole = CellularDomain(meshFileOuter,subdomainFileOuter)
   cellDomWhole.Setup()
   cellDomWhole.AssignBC()
-  cellDomWhole.problem.diff_eff = cellDom.problem.diff_eff
-  solve_homogenized(cellDomWhile.problem,molDomUnit.problem)
+  cellDomWhole.problem.d_eff = cellDomUnit.problem.d_eff
+  solve_homogenized_whole(cellDomWhile.problem,molDomUnit.problem)
 
   
   quit()
@@ -253,5 +274,5 @@ if __name__ == "__main__":
   
 
   (cell,mol) = domost()
-  solve_homogenized(cell,mol)
+  solve_homogenized_whole(cell,mol)
 
