@@ -54,7 +54,7 @@ def solve_homogeneous_unit(problem,type="scalar"):
 ## Coupled problem (need to check on neumann confs)
 # Here I'm just trying to get a general time-dep soln to work. NOthing is
 # relevant to my problem yet
-def solve_homogenized_whole(wholecell,mol):
+def solve_homogenized_whole(wholecell,mol,type="scalar"):
 
 
 
@@ -96,7 +96,8 @@ def solve_homogenized_whole(wholecell,mol):
   x = u_n.vector()
   #x[:] = wholecell.x.vector()[:] # pass 'x' values from initial solution of homogeneous domains
   x[:] = 0.1 # for init cond
-  wholecell.x = x
+  wholecell.x = Function(wholecell.V)
+  wholecell.x.vector()[:] = x[:]
   #wholecell.u.vector()[:] = u0
   #mol.u.vector()[:] = 0.5*u0
   #mol.x = x
@@ -115,8 +116,13 @@ def solve_homogenized_whole(wholecell,mol):
 
     ## TODO check that flux is correct
     # assume simple flux between compartments
-    wholecell.conc = assemble( wholecell.x * dx,mesh=wholecell.mesh)
-    mol.conc = assemble( mol.x * dx,mesh=mol.mesh)
+    if(type=="scalar"):
+      scalar.CalcConc(wholecell)
+      scalar.CalcConc(mol)
+    elif(type=="scalar"):
+      field.CalcConc(wholecell)
+      field.CalcConc(mol)
+
     k = 1
     # TODO - need to understand how to get non-zero fluxes and why this matters
     hack = 0.5
@@ -153,14 +159,16 @@ def solve_homogenized_whole(wholecell,mol):
 
 
     b += M*x
-    wholecell.bc.apply(A,b)
-    solve(A,x,b,"gmres","default")
-    #write
+    if(hasattr(wholecell,'bc')):
+      wholecell.bc.apply(A,b)
 
+    solve(A,x,b,"gmres","default")
+
+    # store solution 
     wholecell.x.vector()[:] = x[:]
 
 
-    # apparently each time we save, we get a new VTU for the time slice
+    # store results 
     out << wholecell.x
 
 
@@ -273,7 +281,6 @@ if __name__ == "__main__":
   msg="script.py <arg>"
   remap = "none"
 
-  print "debug"
   #GoelEx2p7()
   Test()
   quit()

@@ -11,6 +11,17 @@ from params import *
 def boundary(x,on_boundary):
     return on_boundary
 
+def CalcArea(problem):
+  area = assemble(problem.x[0] * ds, mesh=problem.mesh)
+  problem.area = area
+  return area
+
+# calculate concentration
+def CalcConc(problem):
+  problem.conc = assemble( problem.x[0] * dx,mesh=problem.mesh)
+  problem.conc /= assemble( Constant(1)*dx,mesh=problem.mesh)
+  
+
 #
 # Solve homogenized diff. eqn based on vector field 
 #
@@ -101,9 +112,7 @@ def compute_eff_diff(problem):
     omegas[i] = integrand
   
   
-  #area = assemble(ds)
-  print "WARNING: Need to copmpute area"
-  area = 1
+  area = CalcArea()
   omegas /= 1  
   Deff = parms.d*omegas
   print Deff 

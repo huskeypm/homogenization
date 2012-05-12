@@ -12,7 +12,7 @@ class empty:pass
 
 # TODO - add boundary 
 # might not be correct
-def  area(mesh, boundary=-1):
+def  CalcArea(mesh, boundary=-1):
   f = Constant(1)
   if(boundary==-1):
     A = f*ds
@@ -23,6 +23,10 @@ def  area(mesh, boundary=-1):
 
   return a
 
+# calculate concentration
+def CalcConc(problem):
+  problem.conc = assemble( problem.x * dx,mesh=problem.mesh)
+  problem.conc /= assemble( Constant(1)*dx,mesh=problem.mesh)
 
 
 ## solv. homog cell
@@ -77,13 +81,10 @@ def solveHomog(problem):
 ## compute effective diff const 
 def compute_eff_diff(problem):
   from dolfin import assemble
-  # TODO need to computre area 
-  #gamma = assemble(ds)    
 
-  gamma = area(problem.mesh,boundary=-1)
+  gamma = CalcArea(problem.mesh,boundary=-1)
 
   # TODO need to figure out how to represent ident
-  #I = Identity(problem.V.cell().d)
 
   # TODO FIXME     
   #I = delta
