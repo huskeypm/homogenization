@@ -3,7 +3,7 @@ from dolfin import *
 
 class empty:pass
 
-class MolecularDomain:
+class MolecularUnitDomain:
   def __init__(self,fileMesh,fileSubdomains):
     self.problem = empty()
     problem = self.problem
@@ -16,10 +16,10 @@ class MolecularDomain:
     # mesh
     problem = self.problem
     problem.mesh = Mesh(problem.fileMesh)
-    problem.type = type
-    if(type=="scalar"):
+    self.type = type
+    if(self.type=="scalar"):
         problem.V = FunctionSpace(problem.mesh,"CG",1)
-    elif(type=="field"):
+    elif(self.type=="field"):
         problem.V = VectorFunctionSpace(problem.mesh,"CG",1)
 
     problem.subdomains = MeshFunction(
@@ -37,8 +37,8 @@ class MolecularDomain:
     if(self.type=="scalar"):
         u0 = Constant(0.)
         u1 = Constant(1.)
-    elif(self.type="field"):
-        u0 = Constant((0.,0,0.)
+    elif(self.type=="field"):
+        u0 = Constant((0.,0,0.))
         u1 = Constant((1.,1.,1.))
 
     # molec boundary
@@ -47,6 +47,6 @@ class MolecularDomain:
     bc1 = DirichletBC(problem.V,u1,problem.subdomains,5)
     # neum
     #bc1 = DirichletBC(self.V,Constant(0.),self.subdomains,1)
-    problem.bcs = [bc1,bc2]
+    problem.bcs = [bc0,bc1]
 
 

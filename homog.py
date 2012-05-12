@@ -9,7 +9,8 @@ from params import *
 
 # classes
 from CellularDomain import *
-from MolecularDomain import *
+from CellularUnitDomain import *
+from MolecularUnitDomain import *
 import scalar
 import field
 
@@ -53,47 +54,50 @@ def solve_homogeneous_unit(problem,type="scalar"):
 ## Coupled problem (need to check on neumann confs)
 # Here I'm just trying to get a general time-dep soln to work. NOthing is
 # relevant to my problem yet
-def solve_homogenized_whole(cell,mol):
+def solve_homogenized_whole(wholecell,mol):
 
 
 
-  out  = File(problem.name+"_homogenized.pvd")
+  out  = File(wholecell.name+"_homogenized.pvd")
 
 
   print "WARNING: overwriting anistropic D const. Needs to be fixed"
-  print "WARNING: must adjust both unit cell and whole to enforce VecFunc basis"
-  cell.d_eff = cell.d_eff[0]
+  print "WARNING: must adjust both unit wholecell and whole to enforce VecFunc basis"
+  wholecell.d_eff = wholecell.d_eff[0]
+
 
   # set up time dep form
-
+  wholecell.u = TrialFunction(wholecell.V)
+  wholecell.v = TestFunction(wholecell.V)
   # Assembly of the K, M and A matrices
-  K = assemble(cell.d_eff * inner(grad(cell.u), grad(cell.v))*dx,mesh=cell.mesh)
-  M = assemble(cell.u*cell.v*dx,mesh=cell.mesh)
+  K = assemble(wholecell.d_eff * inner(grad(wholecell.u), grad(wholecell.v))*dx,mesh=wholecell.mesh)
+  M = assemble(wholecell.u*wholecell.v*dx,mesh=wholecell.mesh)
   #E = assemble(-u*inner(a, grad(v))*dx,mesh=mesh)
 
 
 # if(1):
 #   print "Test, erase me"
-#   V = FunctionSpace(cell.mesh, "CG", 1)
+#   V = FunctionSpace(wholecell.mesh, "CG", 1)
 #   u = TrialFunction(V)
 #   v = TestFunction(V)
-#   K = assemble(cell.d_eff * inner(grad(u), grad(v))*dx,mesh=cell.mesh)
+#   K = assemble(wholecell.d_eff * inner(grad(u), grad(v))*dx,mesh=wholecell.mesh)
 #   A = K.copy()
 #   A.assign(K)
 #   quit()
 
 
-  u_n = Function(cell.V)
+  u_n = Function(wholecell.V)
   A = K.copy()
   b = Vector(A.size(1))
   b[:]=0.0
-  E = assemble(cell.dcdn*cell.v*ds,mesh=cell.mesh)
+  E = assemble(wholecell.dudn*wholecell.v*ds,mesh=wholecell.mesh)
   b += E
 
   x = u_n.vector()
-  x[:] = cell.x.vector()[:] # pass 'x' values from initial solution of homogeneous domains
-  #cell.x = x
-  #cell.u.vector()[:] = u0
+  #x[:] = wholecell.x.vector()[:] # pass 'x' values from initial solution of homogeneous domains
+  x[:] = 0.1 # for init cond
+  wholecell.x = x
+  #wholecell.u.vector()[:] = u0
   #mol.u.vector()[:] = 0.5*u0
   #mol.x = x
 
@@ -111,13 +115,13 @@ def solve_homogenized_whole(cell,mol):
 
     ## TODO check that flux is correct
     # assume simple flux between compartments
-    cell.conc = assemble( cell.x * dx,mesh=cell.mesh)
+    wholecell.conc = assemble( wholecell.x * dx,mesh=wholecell.mesh)
     mol.conc = assemble( mol.x * dx,mesh=mol.mesh)
     k = 1
     # TODO - need to understand how to get non-zero fluxes and why this matters
     hack = 0.5
-    jcell = k*(cell.conc - hack*mol.conc)
-    print "cell: %f" % cell.conc
+    jcell = k*(wholecell.conc - hack*mol.conc)
+    print "wholecell: %f" % wholecell.conc
     print "mol: %f" % mol.conc
     jmol  = -jcell
 
@@ -144,20 +148,20 @@ def solve_homogenized_whole(cell,mol):
 
     # outer cell boundary
     # TODO verify
-    E = assemble(cell.dcdn*cell.v*ds,mesh=cell.mesh)
+    E = assemble(wholecell.dudn*wholecell.v*ds,mesh=wholecell.mesh)
     b += E
 
 
     b += M*x
-    cell.bc.apply(A,b)
+    wholecell.bc.apply(A,b)
     solve(A,x,b,"gmres","default")
     #write
 
-    cell.x.vector()[:] = x[:]
+    wholecell.x.vector()[:] = x[:]
 
 
     # apparently each time we save, we get a new VTU for the time slice
-    out << cell.x
+    out << wholecell.x
 
 
     # solv mol
@@ -197,7 +201,7 @@ def Test():
   prefix = "cell"
   meshFileOuter = root+prefix+"_mesh.xml.gz"
   subdomainFileOuter = root+prefix+"_subdomains.xml.gz"
-  cellDomUnit = CellularDomain(meshFileOuter,subdomainFileOuter)
+  cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter)
   cellDomUnit.Setup(type="field")
   cellDomUnit.AssignBC()
   solve_homogeneous_unit(cellDomUnit.problem,type="field")
@@ -207,7 +211,7 @@ def Test():
   prefix = "mol"
   meshFileInner = root+prefix+"_mesh.xml.gz"
   subdomainFileInner = root+prefix+"_subdomains.xml.gz"
-  molDomUnit = MolecularDomain(meshFileInner,subdomainFileInner)
+  molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner)
   molDomUnit.Setup(type="field")
   molDomUnit.AssignBC()
   solve_homogeneous_unit(molDomUnit.problem,type="field")
@@ -223,8 +227,8 @@ def Test():
   print "WARNING: using scalar for right now"
   #cellDomWhole.Setup(type="field")
   cellDomWhole.Setup(type="scalar")
-  # not needed, since uses Neumann
-  #cellDomWhole.AssignBC()
+  # TODO: Need to replace, since using time-dep Neumann
+  cellDomWhole.AssignBC()
   cellDomWhole.problem.d_eff = cellDomUnit.problem.d_eff
   solve_homogenized_whole(cellDomWhole.problem,molDomUnit.problem)
 

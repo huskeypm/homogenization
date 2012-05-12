@@ -3,7 +3,7 @@ from dolfin import *
 
 class empty:pass
 
-class CellularDomain:
+class CellularUnitDomain:
   def __init__(self,fileMesh,fileSubdomains):
     self.problem = empty()
     problem = self.problem
@@ -16,7 +16,7 @@ class CellularDomain:
     # mesh
     problem = self.problem
     problem.mesh = Mesh(problem.fileMesh)
-    problem.type = type
+    self.type = type
     if(type=="scalar"):
         problem.V = FunctionSpace(problem.mesh,"CG",1)
     elif(type=="field"):
@@ -39,15 +39,15 @@ class CellularDomain:
         #u1 = Expression("1 + x[0]*x[0] + x[1]*x[1]")
         # I don't think I want any specific BCs here for homog prob.
         u1 = Constant(1.)
-    elif(self.type="field"):
-        u0 = Constant((0.,0,0.)
+    elif(self.type=="field"):
+        u0 = Constant((0.,0,0.))
         u1 = Constant((1.,1.,1.))
 
 
-    bc1 = DirichletBC(problem.V,u0,problem.subdomains,1)
-    bc2 = DirichletBC(problem.V,u1,problem.subdomains,5)
+    bc0 = DirichletBC(problem.V,u0,problem.subdomains,1)
+    bc1 = DirichletBC(problem.V,u1,problem.subdomains,5)
     # neum
     #bc1 = DirichletBC(self.V,Constant(0.),self.subdomains,1)
-    problem.bcs = [bc1,bc2]
+    problem.bcs = [bc0,bc1]
 
 

@@ -16,10 +16,10 @@ class CellularDomain:
     # mesh
     problem = self.problem
     problem.mesh = Mesh(problem.fileMesh)
-    problem.type = type
-    if(type=="scalar"):
+    self.type = type
+    if(self.type=="scalar"):
         problem.V = FunctionSpace(problem.mesh,"CG",1)
-    elif(type=="field"):
+    elif(self.type=="field"):
         problem.V = VectorFunctionSpace(problem.mesh,"CG",1)
 
     problem.subdomains = MeshFunction(
@@ -34,10 +34,10 @@ class CellularDomain:
     problem = self.problem
 
     print "Add in LCC"
-    if(type=="scalar"):
+    if(self.type=="scalar"):
         dudn = Constant(2.)
-    elif(type=="field"):
-        dudn = Constant(2.,2.,2.)
+    elif(self.type=="field"):
+        dudn = Constant((2.,2.,2.))
 
     problem.dudn = dudn  # assigning a flux on the entire boundary for now
 
