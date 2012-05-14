@@ -39,5 +39,8 @@ class CellularDomain:
     elif(self.type=="field"):
         dudn = Constant((2.,2.,2.))
 
+    # Currently don't have any Dirichlet BCs
+    problem.bcs=[]
+
     problem.dudn = dudn  # assigning a flux on the entire boundary for now
 
