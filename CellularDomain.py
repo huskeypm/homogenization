@@ -17,6 +17,7 @@ class CellularDomain(Domain):
     # mesh
     problem = self.problem
     problem.mesh = Mesh(problem.fileMesh)
+
     self.type = type
     if(self.type=="scalar"):
         problem.V = FunctionSpace(problem.mesh,"CG",1)
@@ -25,7 +26,11 @@ class CellularDomain(Domain):
 
     problem.subdomains = MeshFunction(
       "uint", problem.mesh, problem.fileSubdomains)
-    #self.markers = [1,4,5]
+
+
+    # geom
+    self.CalcGeom(problem)
+
 
 
 
@@ -35,14 +40,14 @@ class CellularDomain(Domain):
     problem = self.problem
 
     print "Add in LCC"
-    #if(self.type=="scalar"):
-    #    dudn = Constant(2.)
-    #elif(self.type=="field"):
-    #    dudn = Constant((2.,2.,2.))
     dudn = Constant(2.)
 
     # Currently don't have any Dirichlet BCs
     problem.bcs=[]
 
-    problem.dudn = dudn  # assigning a flux on the entire boundary for now
+    #problem.dudn = dudn  # assigning a flux on the entire boundary for now
+    t = 0
+    problem.dudn = Expression("-2 * exp(-t)",
+      t = t)
+    #problem.dudn = Constant(2.)
 

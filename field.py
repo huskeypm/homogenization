@@ -12,7 +12,7 @@ from params import *
 def CalcConc(problem):
   problem.conc = assemble( problem.x[0] * dx,mesh=problem.mesh)
   #problem.conc /= assemble( Constant(1)*dx,mesh=problem.mesh)
-  problem.conc /= problem.vol
+  problem.conc /= problem.volume
   
 
 #
@@ -91,9 +91,18 @@ def compute_eff_diff(problem):
   
   
   omegas /= problem.gamma
-  Deff = parms.d*omegas
+  d_eff = parms.d*omegas
+  print "d_eff:"
+  print d_eff
+
+  print "rewighting by unit cell vol"
+  d_eff /= problem.volUnitCell
+  print d_eff
+
+  # store 
+  problem.d_eff = d_eff
   
-  return Deff
+  return d_eff
 
 class empty:pass
 

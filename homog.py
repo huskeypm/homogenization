@@ -15,14 +15,15 @@ from MolecularUnitDomain import *
 import scalar
 import field
 
+
+
 class empty:pass
 
 
 ## solv. homog cell
-def solve_homogeneous_unit(problem,type="scalar"):
+def solve_homogeneous_unit(problem,type="scalar",debug=0):
 
   ## debug mode
-  debug=0
   if(debug==1):
     print "In debug mode - using stored values"
     d_eff = np.array([2.,2.,2.])
@@ -43,8 +44,6 @@ def solve_homogeneous_unit(problem,type="scalar"):
 
   # using vector fields 
   elif (type=="field"):
-    print "Here"
-    quit()
     field.solveHomog(problem)
     d_eff = field.compute_eff_diff(problem)
 
@@ -54,14 +53,16 @@ def solve_homogeneous_unit(problem,type="scalar"):
 
   problem.d_eff = d_eff
 
-# add in flux condition
-def getb(problem):
+# add in (time-dependent) flux condition
+def getb(problem,t=0):
   print "Replace w real flux"
   mesh = problem.mesh
   n = FacetNormal(mesh)
-  #PKHflux = Constant(4.)
-  flux = problem.dudn
-  #E = flux*dot(tetrahedron.n,v)*ds
+
+
+  ## NOTE: I think it makes sense to keep this as simple as possible (e.g. no complicated fluxes or markers) 
+  ## since mostly likely what I want is already in subcell. 
+  flux = problem.dudn # hopefull the expression is getting updated with each time step 
   E = flux*dot(n,problem.v)*ds
   b  = assemble(E)
   return b
@@ -69,34 +70,37 @@ def getb(problem):
 ## Coupled problem (need to check on neumann confs)
 # NOTE: assuming molecular domain is in steady state, so only solving
 # cellular domain in time-dep fashion
-def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar"):
+def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar",debug=0):
 
 
   # store output 
 
   ## molecular domain (steady state)
   # make Diff matrix
-  Dii  = Constant((wholecell.d_eff[0],wholecell.d_eff[1],wholecell.d_eff[2]))
-  Dij = diag(Dii)  # for now, but could be anisotropic
-  u,v = TrialFunction(unitmol.V), TestFunction(unitmol.V)
-  A = inner(Dij*grad(u), grad(v))*dx
-  L = 0
-  x = Function(unitmol.V)
-  
-  bcs = unitmol.bcs # use same Dirichlet cond. from unitcell prob.
-  # no flux bc on surface, so we don't explicitly add it here
-  solve(A==L,x,bcs) 
-  File(unitmol.name+"_homogenized.pvd") << x
-  quit()
+  print "NEED TO SOLVE MOL"
+##  print "Solving molecular steady state..."
+##  Dii  = Constant((wholecell.d_eff[0],wholecell.d_eff[1],wholecell.d_eff[2]))
+##  Dij = diag(Dii)  # for now, but could be anisotropic
+##  u,v = TrialFunction(unitmol.V), TestFunction(unitmol.V)
+##  A = inner(Dij*grad(u), grad(v))*dx
+##  L = 0
+##  x = Function(unitmol.V)
+##  
+##  bcs = unitmol.bcs # use same Dirichlet cond. from unitcell prob.
+##  # no flux bc on surface, so we don't explicitly add it here
+##  solve(A==L,x,bcs) 
+##  File(unitmol.name+"_homogenized.pvd") << x
 
 
   ## Wholecell
+  print "Solving time-dependent cellular problem"
   # make Diff matrix
   Dii  = Constant((wholecell.d_eff[0],wholecell.d_eff[1],wholecell.d_eff[2]))
   Dij = diag(Dii)  # for now, but could be anisotropic
   # Assembly of the K, M and A matrices
   u,v = TrialFunction(wholecell.V), TestFunction(wholecell.V)
-  u,v = wholecell.u,wholecell.v
+  wholecell.u = u
+  wholecell.v = v
   a =inner(Dij * grad(u), grad(v))*dx
   K = assemble(a,mesh=wholecell.mesh)
   A = K.copy()
@@ -122,9 +126,15 @@ def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar"):
 
 
   # time parms 
-  dt =0.5
+  dt =0.005
   t = 0.
-  tMax = 1
+  if(debug ==0):
+    tStep = 10
+  else:
+    tStep= 2
+  
+  tMax = tStep * dt
+  
 
   ## iterate
   while (t < tMax):
@@ -132,9 +142,10 @@ def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar"):
     ## TODO check that flux is correct
     # assume simple flux between compartments
     field.CalcConc(wholecell)
-    print "WARNING: cmtd out"
-    #field.CalcConc(unitmol)
-    unitmol.conc=1
+    if(debug==0):
+      field.CalcConc(unitmol)
+    else:
+      unitmol.conc=0.2
 
     # TODO - flux between unitmol and wholecell domain (where is the surface here, since this
     # concept seems tobe relevant only for unit cell??) 
@@ -228,11 +239,15 @@ def Debug():
 
   solve_homogeneous_unit(cellDomUnit.problem,type="field")
 
+def Debug2():
+  1 
+
 # test 2
-def SolveHom(root="./"):
-  root = "/home/huskeypm/scratch/homog/mol/"
+def SolveHom(root="./",debug=0):
 
   ## Setup
+  root = "/home/huskeypm/scratch/homog/mol/"
+
   # celular domain
   prefix = "cell"
   meshFileOuter = root+prefix+"_mesh.xml.gz"
@@ -254,35 +269,37 @@ def SolveHom(root="./"):
   molProblem = molDomUnit.problem
   volUnitCell = cellProblem.volume + molProblem.volume 
   cellProblem.gamma = cellProblem.volume/volUnitCell
+  cellProblem.volUnitCell = volUnitCell
   print "cell frac vol: %f" % cellProblem.gamma
   molProblem.gamma = molProblem.volume/volUnitCell
+  molProblem.volUnitCell = volUnitCell
   print "mol frac vol: %f" % molProblem.gamma
 
 
   ## Solve unit cell problems  
   print "Solving cellular unit cell using %s" % meshFileOuter
-  solve_homogeneous_unit(cellDomUnit.problem,type="field")
-  quit()
+  solve_homogeneous_unit(cellDomUnit.problem,type="field",debug=debug)
   print "Solving molecular unit cell using %s"% meshFileInner
-  solve_homogeneous_unit(molDomUnit.problem,type="field")
-  quit()
+  solve_homogeneous_unit(molDomUnit.problem,type="field",debug=debug)
 
 
   ## whole cell solutions
   # solve on actual cell domain
-  prefix = "wholecell"
+  prefix = "multi_clustered"
   meshFileCellular= root+prefix+"_mesh.xml.gz"
   subdomainFileCellular= root+prefix+"_subdomains.xml.gz"
-  print "Solving molecular unit cell using %s"% meshFileCellular
-  cellDomWhole = CellularDomain(meshFileOuter,subdomainFileCellular)
+  if(debug==0):
+    cellDomWhole = CellularDomain(meshFileCellular,subdomainFileCellular)
+  else:
+    cellDomWhole = DefaultUnitDomain()
+
   cellDomWhole.Setup(type="field")
   # TODO: Need to replace, since using time-dep Neumann
   cellDomWhole.AssignBC()
   cellDomWhole.problem.d_eff = cellDomUnit.problem.d_eff
-  solve_homogenized_whole(cellDomWhole.problem,cellDomUnit.problem,molDomUnit.problem)
+  print "Solving molecular unit cell using %s"% (meshFileCellular)
+  solve_homogenized_whole(cellDomWhole.problem,cellDomUnit.problem,molDomUnit.problem,debug=debug)
 
-
-  quit()
 
 # example 2.7 in Goel paper
 ##def GoelEx2p7():
@@ -331,7 +348,10 @@ if __name__ == "__main__":
 
   # paths hardcoded insside
   #Debug()
+  #Debug2()
   #quit()
 
-  SolveHom()
+
+  debug =0
+  SolveHom(debug=debug)
 

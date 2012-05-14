@@ -3,6 +3,10 @@ from dolfin import *
 from params import *
 from Domain import *
 
+markerActiveSite = 1
+markerMolecularBoundary =4
+markerOuterBoundary=5
+
 class MolecularUnitDomain(Domain):
   def __init__(self,fileMesh,fileSubdomains):
     super(MolecularUnitDomain,self).__init__()
@@ -17,6 +21,9 @@ class MolecularUnitDomain(Domain):
     # mesh
     problem = self.problem
     problem.mesh = Mesh(problem.fileMesh)
+    # mesh is in A, so converting to um
+    problem.mesh.coordinates()[:] *= parms.ANG_TO_UM
+
     self.type = type
     if(self.type=="scalar"):
         problem.V = FunctionSpace(problem.mesh,"CG",1)
@@ -45,9 +52,9 @@ class MolecularUnitDomain(Domain):
         u1 = Constant((1.,1.,1.))
 
     # molec boundary
-    bc0 = DirichletBC(problem.V,u0,problem.subdomains,parms.markerActiveSite)
+    bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerActiveSite)
     # outer boundary
-    bc1 = DirichletBC(problem.V,u1,problem.subdomains,parms.markerOuterBoundary)
+    bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerOuterBoundary)
     # neum
 
     problem.bcs = [bc0,bc1]

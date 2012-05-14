@@ -3,6 +3,10 @@ from dolfin import *
 from params import *
 from Domain import *
 
+
+markerInsideBoundary= 1
+markerOutsideBoundary= 5
+
 class CellularUnitDomain(Domain):
   def __init__(self,fileMesh,fileSubdomains):
     super(CellularUnitDomain,self).__init__()
@@ -17,6 +21,11 @@ class CellularUnitDomain(Domain):
     # mesh
     problem = self.problem
     problem.mesh = Mesh(problem.fileMesh)
+
+    # mesh is in A, so converting to um
+    problem.mesh.coordinates()[:] *= parms.ANG_TO_UM
+
+
     self.type = type
     if(type=="scalar"):
         problem.V = FunctionSpace(problem.mesh,"CG",1)
@@ -48,8 +57,8 @@ class CellularUnitDomain(Domain):
 
 
     print "Not sure if I should be using any Dirichlet BC"
-    bc0 = DirichletBC(problem.V,u0,problem.subdomains,parms.markerActiveSite)
-    bc1 = DirichletBC(problem.V,u1,problem.subdomains,parms.markerOuterBoundary)
+    bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerOutsideBoundary)
+    bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerInsideBoundary)
     # neum
 
     problem.bcs = [bc0,bc1]

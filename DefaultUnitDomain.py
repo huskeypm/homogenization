@@ -42,4 +42,9 @@ class DefaultUnitDomain(Domain):
     bc = DirichletBC(problem.V, u1, boundary)
     problem.bcs = [bc]
 
+    # Flux condition (just a placeholder for debugging)
+    t = 0
+    problem.dudn = Expression("0.5  * exp(-t/2.)",
+      t=t)
+
 
