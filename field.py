@@ -33,10 +33,10 @@ def solveHomog(problem):
   # use class definition for BCs, etc
   if(hasattr(problem,'init')):
     print"Using class definition"
-    print "IGNORING FOR NOW AND OVERWRITING"
+#    print "IGNORING FOR NOW AND OVERWRITING"
 
-  if(0):
-    a =1 
+#  if(0):
+#    a =1 
 
   # load everything w defauit values 
   else:
@@ -78,9 +78,11 @@ def solveHomog(problem):
   a = LHS
   
   ## RHS terms 
-  print "WATNING: still confused about the BC here. Johan says ==0, Gary says we have complicated Jacobian term"
-  n = FacetNormal(mesh)
-  L = inner( n,v ) * ds 
+  #print "WATNING: still confused about the BC here. Johan says ==0, Gary says we have complicated Jacobian term"
+  #n = FacetNormal(mesh)
+  #L = inner( n,v ) * ds 
+  # Based on Johan's May 14 email, because (d X + I) .n = 0, we do not apply the BC. 
+  L=0
   
   # add in RHS from earlier 
   L += RHS

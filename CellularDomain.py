@@ -34,10 +34,11 @@ class CellularDomain:
     problem = self.problem
 
     print "Add in LCC"
-    if(self.type=="scalar"):
-        dudn = Constant(2.)
-    elif(self.type=="field"):
-        dudn = Constant((2.,2.,2.))
+    #if(self.type=="scalar"):
+    #    dudn = Constant(2.)
+    #elif(self.type=="field"):
+    #    dudn = Constant((2.,2.,2.))
+    dudn = Constant(2.)
 
     # Currently don't have any Dirichlet BCs
     problem.bcs=[]

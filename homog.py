@@ -17,9 +17,6 @@ import field
 class empty:pass
 
 
-def u0_boundary(x, on_boundary):
-  return on_boundary
-
 ## solv. homog cell
 def solve_homogeneous_unit(problem,type="scalar"):
 
@@ -51,11 +48,13 @@ def solve_homogeneous_unit(problem,type="scalar"):
 
   problem.d_eff = d_eff
 
+# add in flux condition
 def getb(problem):
   print "Replace w real flux"
   mesh = problem.mesh
   n = FacetNormal(mesh)
-  flux = Constant(4.)
+  #PKHflux = Constant(4.)
+  flux = problem.dudn
   #E = flux*dot(tetrahedron.n,v)*ds
   E = flux*dot(n,problem.v)*ds
   b  = assemble(E)
@@ -190,27 +189,27 @@ def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar"):
 
   quit()
 
-def domost():
-  parms.d = 1.
-  cell = empty()
-  mol  = empty()
-  cell.name = "cell"
-  mol.name = "mol"
-
-  # TODO need to rescale size
-  cell.mesh = UnitCube(8,8,8)
-  mol.mesh  = UnitCube(8,8,8)
-
-  solve_homogeneous_unit(cell)
-  solve_homogeneous_unit(mol)
-
-  compute_eff_diff(cell)
-  compute_eff_diff(mol)
-
-  return (cell,mol)
+##def domost():
+##  parms.d = 1.
+##  cell = empty()
+##  mol  = empty()
+##  cell.name = "cell"
+##  mol.name = "mol"
+##
+##  # TODO need to rescale size
+##  cell.mesh = UnitCube(8,8,8)
+##  mol.mesh  = UnitCube(8,8,8)
+##
+##  solve_homogeneous_unit(cell)
+##  solve_homogeneous_unit(mol)
+##
+##  compute_eff_diff(cell)
+##  compute_eff_diff(mol)
+##
+##  return (cell,mol)
 
 # test 2
-def Test():
+def Test(root="./"):
   root = "/home/huskeypm/scratch/homog/mol/"
 
   # celular domain
@@ -251,33 +250,33 @@ def Test():
   quit()
 
 # example 2.7 in Goel paper
-def GoelEx2p7():
-  ## micro
-  unitLength = np.array([0.1,0.1,1.0]) # length of microdomain in unit cell
-  diff = Constant(2.5) # isotropic
-
-  # our geometry needs to look something like the 'cross' in Fig 2
-  # creating this in Blender
-  # mesh is crap, doesn't work
-  meshFile = "goel.xml.gz"
-  problem = empty()
-  problem.mesh = Mesh(meshFile)
-
-  #mesh = UnitCube(6,6,6)
-  #problem.name ="test"
-  #problem.mesh = mesh
-
-  solve_homogeneous_unit(problem)
-  quit()
-
-
-  # note: authors take u0(x=[0.5,0.5,0,5]) = 0 to fix arb. const
-  # i think I can treat this like an initial condition and set some
-  # location in u0 to be zero.
-  u0 = Constant(0)  # this doesn't do anything, but could use as templat ealter
-  u_1 = interpolate(u0,V) # applies Expression u0 to FunctionSpace
-  # solve stuff
-  # u_1.assign(u)
+##def GoelEx2p7():
+##  ## micro
+##  unitLength = np.array([0.1,0.1,1.0]) # length of microdomain in unit cell
+##  diff = Constant(2.5) # isotropic
+##
+##  # our geometry needs to look something like the 'cross' in Fig 2
+##  # creating this in Blender
+##  # mesh is crap, doesn't work
+##  meshFile = "goel.xml.gz"
+##  problem = empty()
+##  problem.mesh = Mesh(meshFile)
+##
+##  #mesh = UnitCube(6,6,6)
+##  #problem.name ="test"
+##  #problem.mesh = mesh
+##
+##  solve_homogeneous_unit(problem)
+##  quit()
+##
+##
+##  # note: authors take u0(x=[0.5,0.5,0,5]) = 0 to fix arb. const
+##  # i think I can treat this like an initial condition and set some
+##  # location in u0 to be zero.
+##  u0 = Constant(0)  # this doesn't do anything, but could use as templat ealter
+##  u_1 = interpolate(u0,V) # applies Expression u0 to FunctionSpace
+##  # solve stuff
+##  # u_1.assign(u)
 
 
 ##
@@ -289,7 +288,6 @@ if __name__ == "__main__":
   remap = "none"
 
   #GoelEx2p7()
-  Test()
   quit()
 
   import sys
@@ -297,6 +295,6 @@ if __name__ == "__main__":
       raise RuntimeError(msg)
 
 
-  (cell,mol) = domost()
-  solve_homogenized_whole(cell,mol)
+  # paths hardcoded insside
+  Test()
 
