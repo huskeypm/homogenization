@@ -1,11 +1,12 @@
 # Defines boundary conditions, etc for microdomain
 from dolfin import *
+from params import *
+from Domain import *
 
-class empty:pass
-
-class MolecularUnitDomain:
+class MolecularUnitDomain(Domain):
   def __init__(self,fileMesh,fileSubdomains):
-    self.problem = empty()
+    super(MolecularUnitDomain,self).__init__()
+
     problem = self.problem
     problem.fileMesh = fileMesh
     problem.fileSubdomains = fileSubdomains
@@ -27,6 +28,8 @@ class MolecularUnitDomain:
     #self.markers = [1,4,5]
 
 
+    # geom
+    self.CalcGeom(problem)
 
 
   # bcs
@@ -42,11 +45,11 @@ class MolecularUnitDomain:
         u1 = Constant((1.,1.,1.))
 
     # molec boundary
-    bc0 = DirichletBC(problem.V,u0,problem.subdomains,1)
+    bc0 = DirichletBC(problem.V,u0,problem.subdomains,parms.markerActiveSite)
     # outer boundary
-    bc1 = DirichletBC(problem.V,u1,problem.subdomains,5)
+    bc1 = DirichletBC(problem.V,u1,problem.subdomains,parms.markerOuterBoundary)
     # neum
-    #bc1 = DirichletBC(self.V,Constant(0.),self.subdomains,1)
+
     problem.bcs = [bc0,bc1]
 
 

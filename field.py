@@ -8,18 +8,11 @@ from dolfin import *
 from params import *
 
 
-def boundary(x,on_boundary):
-    return on_boundary
-
-def CalcArea(problem):
-  area = assemble(problem.x[0] * ds, mesh=problem.mesh)
-  problem.area = area
-  return area
-
 # calculate concentration
 def CalcConc(problem):
   problem.conc = assemble( problem.x[0] * dx,mesh=problem.mesh)
-  problem.conc /= assemble( Constant(1)*dx,mesh=problem.mesh)
+  #problem.conc /= assemble( Constant(1)*dx,mesh=problem.mesh)
+  problem.conc /= problem.vol
   
 
 #
@@ -30,33 +23,13 @@ def CalcConc(problem):
 # Using first-order representation from Higgins paper ()
 # type - scalar is valid only for certain cases
 def solveHomog(problem):
-  # use class definition for BCs, etc
-  if(hasattr(problem,'init')):
-    print"Using class definition"
-#    print "IGNORING FOR NOW AND OVERWRITING"
-
-#  if(0):
-#    a =1 
-
-  # load everything w defauit values 
-  else:
-    print "Overriding - WARNING: Should be in its own class"
-
-    # Create mesh and define function space
-    mesh = problem.mesh
-    VV = VectorFunctionSpace(mesh, "Lagrange", 1)
-    problem.VV = VV
-
-    # Define boundary conditions
-    # dirichlet 
-    # TODO verify  
-    u0 = Constant((1.,1.,1.))
-    bc = DirichletBC(VV, u0, boundary)
-    problem.bcs = [bc]
+  # mesh
+  mesh = problem.mesh
+  V = problem.V
 
   # Define variational problem
-  u = TrialFunction(VV)
-  v = TestFunction(VV)
+  u = TrialFunction(V)
+  v = TestFunction(V)
   
   ## LHS terms 
   # Diffusion constant
@@ -82,18 +55,18 @@ def solveHomog(problem):
   #n = FacetNormal(mesh)
   #L = inner( n,v ) * ds 
   # Based on Johan's May 14 email, because (d X + I) .n = 0, we do not apply the BC. 
-  L=0
   
   # add in RHS from earlier 
-  L += RHS
+  L = RHS
+
   
   # Compute solution
-  x = Function(VV)
-  solve(a == L, x, bc)
+  x = Function(V)
+  solve(a == L, x, problem.bcs)
   
   # Project solution to a continuous function space
   problem.x = x
-  problem.up = project(x, V=VV)
+  problem.up = project(x, V=V)
   
   # save soln
   File(problem.name+"_unit.pvd") << problem.up
@@ -105,19 +78,20 @@ def compute_eff_diff(problem):
   dim = mesh.ufl_cell().geometric_dimension()
   
   ## get omega
+  # treating each component independtly, following Goel's example in sec 2.7 
   import numpy as np
   omegas = np.zeros(dim)
   x = problem.x
   for i in range(dim):
-    integrand = assemble( x[i]*dx)
-    #print integrand 
+    #form = (inner(grad(x[i]),Constant((1,0,0)))+Constant(1)) * dx # works 
+    grad_Xi_component = inner(grad(x[i]),Constant((1,0,0)))
+    form = (grad_Xi_component + Constant(1)) * dx 
+    integrand = assemble(form)
     omegas[i] = integrand
   
   
-  area = CalcArea()
-  omegas /= 1  
+  omegas /= problem.gamma
   Deff = parms.d*omegas
-  print Deff 
   
   return Deff
 
@@ -125,10 +99,11 @@ class empty:pass
 
 def doit(fileIn):
   # Create mesh and define function space
+  defaultDom = DefaultUnitDomain()
   mesh = UnitCube(8,8,8)
   problem = empty()
   problem.mesh = mesh 
-  solveHomog(problem)
+  solveHomog(defaultDom,type="field")
  
 import sys
 

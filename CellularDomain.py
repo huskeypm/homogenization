@@ -1,11 +1,12 @@
 # Defines boundary conditions, etc for cell macrodomain
 from dolfin import *
+from params import *
+from Domain import *
 
-class empty:pass
-
-class CellularDomain:
+class CellularDomain(Domain):
   def __init__(self,fileMesh,fileSubdomains):
-    self.problem = empty()
+    super(CellularDomain,self).__init__()
+
     problem = self.problem
     problem.fileMesh = fileMesh
     problem.fileSubdomains = fileSubdomains

@@ -9,6 +9,7 @@ from params import *
 
 # classes
 from CellularDomain import *
+from DefaultUnitDomain import *
 from CellularUnitDomain import *
 from MolecularUnitDomain import *
 import scalar
@@ -21,7 +22,7 @@ class empty:pass
 def solve_homogeneous_unit(problem,type="scalar"):
 
   ## debug mode
-  debug=1
+  debug=0
   if(debug==1):
     print "In debug mode - using stored values"
     d_eff = np.array([2.,2.,2.])
@@ -33,12 +34,17 @@ def solve_homogeneous_unit(problem,type="scalar"):
     return
 
   ## solve homog
+  # using scalar fields 
   if(type=="scalar"):
+    print "I cannot guarantee this is correct..."
     scalar.solveHomog(problem)
     D_eff = scalar.compute_eff_diff(problem)
     d_eff = np.array([D_eff,D_eff,D_eff])
 
+  # using vector fields 
   elif (type=="field"):
+    print "Here"
+    quit()
     field.solveHomog(problem)
     d_eff = field.compute_eff_diff(problem)
 
@@ -64,49 +70,56 @@ def getb(problem):
 # NOTE: assuming molecular domain is in steady state, so only solving
 # cellular domain in time-dep fashion
 def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar"):
-  # make Diff matrix
-  Dii  = Constant((wholecell.d_eff[0],wholecell.d_eff[1],wholecell.d_eff[2]))
-  Dij = diag(Dii)  # for now, but could be anisotropic
 
 
   # store output 
-  out  = File(wholecell.name+"_homogenized.pvd")
 
+  ## molecular domain (steady state)
+  # make Diff matrix
+  Dii  = Constant((wholecell.d_eff[0],wholecell.d_eff[1],wholecell.d_eff[2]))
+  Dij = diag(Dii)  # for now, but could be anisotropic
+  u,v = TrialFunction(unitmol.V), TestFunction(unitmol.V)
+  A = inner(Dij*grad(u), grad(v))*dx
+  L = 0
+  x = Function(unitmol.V)
+  
+  bcs = unitmol.bcs # use same Dirichlet cond. from unitcell prob.
+  # no flux bc on surface, so we don't explicitly add it here
+  solve(A==L,x,bcs) 
+  File(unitmol.name+"_homogenized.pvd") << x
+  quit()
+
+
+  ## Wholecell
+  # make Diff matrix
+  Dii  = Constant((wholecell.d_eff[0],wholecell.d_eff[1],wholecell.d_eff[2]))
+  Dij = diag(Dii)  # for now, but could be anisotropic
   # Assembly of the K, M and A matrices
-  wholecell.u = TrialFunction(wholecell.V)
-  wholecell.v = TestFunction(wholecell.V)
-
+  u,v = TrialFunction(wholecell.V), TestFunction(wholecell.V)
   u,v = wholecell.u,wholecell.v
   a =inner(Dij * grad(u), grad(v))*dx
   K = assemble(a,mesh=wholecell.mesh)
+  A = K.copy()
   # TODO check on this
   M = assemble(inner(u,v)*dx,mesh=wholecell.mesh)
 
-  u_n = Function(wholecell.V)
-  A = K.copy()
-
   # TODO check on this 
   b = getb(wholecell)
-  #print "Replace w real flux"
-  #mesh = wholecell.mesh
-  #n = FacetNormal(mesh)
-  #flux = Constant(4.)
-  ##E = flux*dot(tetrahedron.n,v)*ds
-  #E = flux*dot(n,v)*ds
-  #b  = assemble(E)
+  # for multiple bcs (though currently we do not have any dirichlet)
+  for bc in wholecell.bcs:
+     bc.apply(A,b)
+
 
   # init cond
+  u_n = Function(wholecell.V)
   x = u_n.vector()
   x[:] = 0.1 # initial conc  
   wholecell.x = Function(wholecell.V) # not sure why I did this 
   wholecell.x.vector()[:] = x[:]
 
-  #b += M * x
-  #quit()
+  out  = File(wholecell.name+"_homogenized.pvd")
 
-  # for multiple bcs (though currently we do not have any dirichlet)
-  for bc in wholecell.bcs:
-     bc.apply(A,b)
+
 
   # time parms 
   dt =0.5
@@ -208,10 +221,18 @@ def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar"):
 ##
 ##  return (cell,mol)
 
+def Debug():
+  cellDomUnit = DefaultUnitDomain()
+  cellDomUnit.Setup(type="field")
+  cellDomUnit.AssignBC()
+
+  solve_homogeneous_unit(cellDomUnit.problem,type="field")
+
 # test 2
-def Test(root="./"):
+def SolveHom(root="./"):
   root = "/home/huskeypm/scratch/homog/mol/"
 
+  ## Setup
   # celular domain
   prefix = "cell"
   meshFileOuter = root+prefix+"_mesh.xml.gz"
@@ -219,8 +240,6 @@ def Test(root="./"):
   cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter)
   cellDomUnit.Setup(type="field")
   cellDomUnit.AssignBC()
-  solve_homogeneous_unit(cellDomUnit.problem,type="field")
-
 
   # molecular domain
   prefix = "mol"
@@ -229,17 +248,33 @@ def Test(root="./"):
   molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner)
   molDomUnit.Setup(type="field")
   molDomUnit.AssignBC()
-  solve_homogeneous_unit(molDomUnit.problem,type="field")
 
+  # get fractional volume 
+  cellProblem = cellDomUnit.problem
+  molProblem = molDomUnit.problem
+  volUnitCell = cellProblem.volume + molProblem.volume 
+  cellProblem.gamma = cellProblem.volume/volUnitCell
+  print "cell frac vol: %f" % cellProblem.gamma
+  molProblem.gamma = molProblem.volume/volUnitCell
+  print "mol frac vol: %f" % molProblem.gamma
+
+
+  ## Solve unit cell problems  
+  print "Solving cellular unit cell using %s" % meshFileOuter
+  solve_homogeneous_unit(cellDomUnit.problem,type="field")
+  quit()
+  print "Solving molecular unit cell using %s"% meshFileInner
+  solve_homogeneous_unit(molDomUnit.problem,type="field")
+  quit()
 
 
   ## whole cell solutions
   # solve on actual cell domain
   prefix = "wholecell"
-  meshFileOuter = root+prefix+"_mesh.xml.gz"
-  subdomainFileOuter = root+prefix+"_subdomains.xml.gz"
-  cellDomWhole = CellularDomain(meshFileOuter,subdomainFileOuter)
-  print "WARNING: using scalar for right now"
+  meshFileCellular= root+prefix+"_mesh.xml.gz"
+  subdomainFileCellular= root+prefix+"_subdomains.xml.gz"
+  print "Solving molecular unit cell using %s"% meshFileCellular
+  cellDomWhole = CellularDomain(meshFileOuter,subdomainFileCellular)
   cellDomWhole.Setup(type="field")
   # TODO: Need to replace, since using time-dep Neumann
   cellDomWhole.AssignBC()
@@ -288,7 +323,6 @@ if __name__ == "__main__":
   remap = "none"
 
   #GoelEx2p7()
-  quit()
 
   import sys
   if len(sys.argv) < 1:
@@ -296,5 +330,8 @@ if __name__ == "__main__":
 
 
   # paths hardcoded insside
-  Test()
+  #Debug()
+  #quit()
+
+  SolveHom()
 
