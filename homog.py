@@ -106,10 +106,10 @@ def build_timedep(theDomain):
 
   # init cond
   u_n = Function(problem.V)
-  x = u_n.vector()
-  x[:] = 0.1 # initial conc  
+  xS = u_n.vector()
+  xS[:] = 0.1 # initial conc  
   problem.x = Function(problem.V) # not sure why I did this 
-  problem.x.vector()[:] = x[:]
+  problem.x.vector()[:] = xS[:]
 
   out  = File(problem.name+"_homogenized.pvd")
 
@@ -118,7 +118,8 @@ def build_timedep(theDomain):
   problem.A = A
   problem.M = M
   problem.b = b
-  problem.out
+  problem.xS = xS
+  problem.out = out
   
 
 
@@ -167,35 +168,36 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
 
 
   ## Wholecell
-  print "Solving time-dependent cellular problem"
-  # make Diff matrix
-  Dii  = Constant((wholecell.d_eff[0],wholecell.d_eff[1],wholecell.d_eff[2]))
-  Dij = diag(Dii)  # for now, but could be anisotropic
-  # Assembly of the K, M and A matrices
-  u,v = TrialFunction(wholecell.V), TestFunction(wholecell.V)
-  wholecell.u = u
-  wholecell.v = v
-  a =inner(Dij * grad(u), grad(v))*dx
-  K = assemble(a,mesh=wholecell.mesh)
-  A = K.copy()
-  # TODO check on this
-  M = assemble(inner(u,v)*dx,mesh=wholecell.mesh)
-
-  # TODO check on this 
-  b = getb(wholecell)
-  # for multiple bcs (though currently we do not have any dirichlet)
-  for bc in wholecell.bcs:
-     bc.apply(A,b)
-
-
-  # init cond
-  u_n = Function(wholecell.V)
-  x = u_n.vector()
-  x[:] = 0.1 # initial conc  
-  wholecell.x = Function(wholecell.V) # not sure why I did this 
-  wholecell.x.vector()[:] = x[:]
-
-  out  = File(wholecell.name+"_homogenized.pvd")
+  build_timedep(wholecellDomain)
+#  print "Solving time-dependent cellular problem"
+#  # make Diff matrix
+#  Dii  = Constant((wholecell.d_eff[0],wholecell.d_eff[1],wholecell.d_eff[2]))
+#  Dij = diag(Dii)  # for now, but could be anisotropic
+#  # Assembly of the K, M and A matrices
+#  u,v = TrialFunction(wholecell.V), TestFunction(wholecell.V)
+#  wholecell.u = u
+#  wholecell.v = v
+#  a =inner(Dij * grad(u), grad(v))*dx
+#  K = assemble(a,mesh=wholecell.mesh)
+#  A = K.copy()
+#  # TODO check on this
+#  M = assemble(inner(u,v)*dx,mesh=wholecell.mesh)
+#
+#  # TODO check on this 
+#  b = getb(wholecell)
+#  # for multiple bcs (though currently we do not have any dirichlet)
+#  for bc in wholecell.bcs:
+#     bc.apply(A,b)
+#
+#
+#  # init cond
+#  u_n = Function(wholecell.V)
+#  x = u_n.vector()
+#  x[:] = 0.1 # initial conc  
+#  wholecell.x = Function(wholecell.V) # not sure why I did this 
+#  wholecell.x.vector()[:] = x[:]
+#
+#  out  = File(wholecell.name+"_homogenized.pvd")
 
 
 
@@ -241,9 +243,10 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
     # JOHAN
     print "t %f" % t
     t  += float(dt)
-    A.assign(K)
-    A *= parms.d*dt
-    A += M
+    wholecell.A.assign(wholecell.K)
+    print "I don't think this term is correct for the 3x3 diff matrix"
+    wholecell.A *= parms.d*dt
+    wholecell.A += wholecell.M
 
     #  TODOGoel: how/where is the surface defined here? It seems like the boundaries within
     # the unit cell are 'embedded' into the large cell description, so are no longer
@@ -258,25 +261,25 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
     # outer cell boundary
     # TODO check on this 
     b1 = getb(wholecell)
-    b=b1
+    wholecell.b=b1
 
     # add in mass matri
-    b += M*x    
+    wholecell.b += wholecell.M*wholecell.xS    
 
     #if(hasattr(wholecell,'bc')):
     #  wholecell.bc.apply(A,b)
     for bc in wholecell.bcs:
-      bc.apply(A,b)
+      bc.apply(wholecell.A,wholecell.b)
 
     ## solve and store 
-    solve(A,x,b,"gmres","default")
+    solve(wholecell.A,wholecell.xS,wholecell.b,"gmres","default")
 
     # store solution 
-    wholecell.x.vector()[:] = x[:]
+    wholecell.x.vector()[:] = wholecell.xS[:]
 
     # store results 
     print "probably either want to project or plot single component"
-    out << wholecell.x
+    wholecell.out << wholecell.x
 
 
     # TODO? solv unitmol
@@ -301,6 +304,10 @@ def CalcFractionalVolumes(cellDomUnit,molDomUnit):
   molProblem.volUnitCell = volUnitCell
   print "mol frac vol: %f" % molProblem.gamma
 
+
+##
+## Example calls (should go in its own file)
+##
 
 
 def Debug():
