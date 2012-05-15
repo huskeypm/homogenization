@@ -8,18 +8,16 @@ def boundary(x,on_boundary):
   return on_boundary
 
 class DefaultUnitDomain(Domain):
-  def __init__(self):
-    super(DefaultUnitDomain,self).__init__()
+  def __init__(self,type):
+    super(DefaultUnitDomain,self).__init__(type)
 
     problem = self.problem
-    problem.init = 1
     problem.name = "Default"
 
-  def Setup(self,type="scalar"):
+  def Setup(self):
     # mesh
     problem = self.problem
     problem.mesh = UnitCube(8,8,8)
-    self.type = type
     if(self.type=="scalar"):
         problem.V = FunctionSpace(problem.mesh,"CG",1)
     elif(self.type=="field"):
@@ -30,7 +28,8 @@ class DefaultUnitDomain(Domain):
 
 
 
-  def AssignBC(self):
+  # Have option of passing in uBoundary 
+  def AssignBC(self,uBoundary=0):
     problem = self.problem
 
     print "Probably don't have the right BCs yet"
@@ -38,6 +37,10 @@ class DefaultUnitDomain(Domain):
         u1 = Constant(1.)
     elif(self.type=="field"):
         u1 = Constant((1.,1.,1.))
+
+    # use user-provided BC instead  
+    if(uBoundary != 0):
+      u1 = uBoundary
 
     bc = DirichletBC(problem.V, u1, boundary)
     problem.bcs = [bc]

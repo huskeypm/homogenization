@@ -4,21 +4,19 @@ from params import *
 from Domain import *
 
 class CellularDomain(Domain):
-  def __init__(self,fileMesh,fileSubdomains):
-    super(CellularDomain,self).__init__()
+  def __init__(self,fileMesh,fileSubdomains,type):
+    super(CellularDomain,self).__init__(type)
 
     problem = self.problem
     problem.fileMesh = fileMesh
     problem.fileSubdomains = fileSubdomains
-    problem.init = 1
     problem.name = "Cellular"
 
-  def Setup(self,type="scalar"):
+  def Setup(self):
     # mesh
     problem = self.problem
     problem.mesh = Mesh(problem.fileMesh)
 
-    self.type = type
     if(self.type=="scalar"):
         problem.V = FunctionSpace(problem.mesh,"CG",1)
     elif(self.type=="field"):

@@ -9,14 +9,13 @@ def boundary(x,on_boundary):
 
 
 class CellularUnitDomain_TnC(Domain):
-  def __init__(self):
-    super(CellularUnitDomain_TnC,self).__init__()
+  def __init__(self,type):
+    super(CellularUnitDomain_TnC,self).__init__(type)
 
     problem = self.problem
-    problem.init = 1
     problem.name = "Cellular"
 
-  def Setup(self,type="scalar"):
+  def Setup(self):
     # mesh
     problem = self.problem
     problem.mesh = UnitCube(8,8,8)
@@ -25,10 +24,9 @@ class CellularUnitDomain_TnC(Domain):
     problem.mesh.coordinates()[:] *= 0.05/2. # since centered at origin
 
 
-    self.type = type
-    if(type=="scalar"):
+    if(self.type=="scalar"):
         problem.V = FunctionSpace(problem.mesh,"CG",1)
-    elif(type=="field"):
+    elif(self.type=="field"):
         problem.V = VectorFunctionSpace(problem.mesh,"CG",1)
 
     # geom

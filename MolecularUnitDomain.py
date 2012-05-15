@@ -8,8 +8,8 @@ markerMolecularBoundary =4
 markerOuterBoundary=5
 
 class MolecularUnitDomain(Domain):
-  def __init__(self,fileMesh,fileSubdomains):
-    super(MolecularUnitDomain,self).__init__()
+  def __init__(self,fileMesh,fileSubdomains,type):
+    super(MolecularUnitDomain,self).__init__(type)
 
     problem = self.problem
     problem.fileMesh = fileMesh
@@ -17,7 +17,7 @@ class MolecularUnitDomain(Domain):
     problem.init = 1
     problem.name = "Molecular"
 
-  def Setup(self,type="scalar"):
+  def Setup(self):
     # mesh
     problem = self.problem
     mesh = Mesh(problem.fileMesh)
@@ -38,7 +38,6 @@ class MolecularUnitDomain(Domain):
     #quit()
 
 
-    self.type = type
     if(self.type=="scalar"):
         problem.V = FunctionSpace(mesh,"CG",1)
     elif(self.type=="field"):
@@ -54,7 +53,7 @@ class MolecularUnitDomain(Domain):
 
 
   # bcs
-  def AssignBC(self):
+  def AssignBC(self,uBoundary=0):
     problem = self.problem
 
     print "Probably don't have the right BCs yet"

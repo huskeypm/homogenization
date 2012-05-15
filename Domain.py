@@ -2,9 +2,11 @@ from dolfin import *
 class empty:pass
 
 class Domain(object):
-  def __init__(self):
+  def __init__(self,type):
     problem = empty()
     problem.gamma = 1
+    self.type = type
+    problem.init = 1
 
     self.problem = problem
 
