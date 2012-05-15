@@ -3,6 +3,12 @@
 # from homog import *
 # (cell,mol) = domost()
 
+## TODO
+# validate against COMSOL
+# validate against Goel? (if mesh isn't too difficult)
+# understand what BC to apply to problem 
+# verify 'LCC' flux is being applied appopriately 
+
 from dolfin import *
 import numpy as np
 from params import *
@@ -12,6 +18,9 @@ from CellularDomain import *
 from DefaultUnitDomain import *
 from CellularUnitDomain import *
 from MolecularUnitDomain import *
+
+from CellularUnitDomain_TnC import *
+
 import scalar
 import field
 
@@ -149,6 +158,8 @@ def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar",debug=0):
 
     # TODO - flux between unitmol and wholecell domain (where is the surface here, since this
     # concept seems tobe relevant only for unit cell??) 
+    # NOTE: I'm not so sure I need to have a flux between molecular domain and cellular domain, since
+    # we assume that molecular domain is at steady state and Dirichlet on boundary is equal to cellular conc
     k = 1
     hack = 0.5
     jcell = k*(wholecell.conc - hack*unitmol.conc)
@@ -157,7 +168,7 @@ def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar",debug=0):
     jmol  = -jcell
 
     # TODO add scale factors (are these consistent)
-    print "WARNING: cmtd out"
+    #print "WARNING: cmtd out"
     #jcell*= unitcell.beta / unitcell.gamma
     #jmol *= unitmol.beta / unitmol.gamma
     
@@ -200,6 +211,7 @@ def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar",debug=0):
     wholecell.x.vector()[:] = x[:]
 
     # store results 
+    print "probably either want to project or plot single component"
     out << wholecell.x
 
 
@@ -211,7 +223,8 @@ def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar",debug=0):
     #write
 
 
-  quit()
+
+  print "Finished!"
 
 ##def domost():
 ##  parms.d = 1.
@@ -232,6 +245,20 @@ def solve_homogenized_whole(wholecell,unitcell,unitmol,type="scalar",debug=0):
 ##
 ##  return (cell,mol)
 
+# 
+def CalcFractionalVolumes(cellDomUnit,molDomUnit):
+  cellProblem = cellDomUnit.problem
+  molProblem = molDomUnit.problem
+  volUnitCell = cellProblem.volume + molProblem.volume 
+  cellProblem.gamma = cellProblem.volume/volUnitCell
+  cellProblem.volUnitCell = volUnitCell
+  print "cell frac vol: %f" % cellProblem.gamma
+  molProblem.gamma = molProblem.volume/volUnitCell
+  molProblem.volUnitCell = volUnitCell
+  print "mol frac vol: %f" % molProblem.gamma
+
+
+
 def Debug():
   cellDomUnit = DefaultUnitDomain()
   cellDomUnit.Setup(type="field")
@@ -242,8 +269,59 @@ def Debug():
 def Debug2():
   1 
 
-# test 2
-def SolveHom(root="./",debug=0):
+# Solve homogenized equations for myofilament embedded in rectilinear cellular domain
+# See notes from 120514_grids.tex as what we are doing here is a bit counterintuitive 
+def SolveMyofilamentHomog(root="./",debug=0):
+
+  ## Setup
+  root = "/home/huskeypm/scratch/homog/mol/"
+
+  # celular domain
+  prefix = "cell"
+  cellDomUnit = CellularUnitDomain_TnC()
+  cellDomUnit.Setup(type="field")
+  cellDomUnit.AssignBC()
+
+  # molecular domain
+  prefix = "troponin"
+  meshFileInner = root+prefix+"_mesh.xml.gz"
+  subdomainFileInner = root+prefix+"_subdomains.xml.gz"
+  molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner)
+  molDomUnit.Setup(type="field")
+  molDomUnit.AssignBC()
+
+  # get fractional volume 
+  CalcFractionalVolumes(cellDomUnit,molDomUnit)
+
+  ## Solve unit cell problems  
+  print "Solving cellular unit cell "
+  solve_homogeneous_unit(cellDomUnit.problem,type="field",debug=debug)
+  print "Solving molecular unit cell using %s"% meshFileInner
+  solve_homogeneous_unit(molDomUnit.problem,type="field",debug=debug)
+
+  print "WARNING: I am CHEATING by overriding anistropic diff const"
+  molDomUnit.problem.d_eff = np.array([1.,0.1,0.1])
+  cellDomUnit.problem.d_eff = np.array([1.,0.1,0.1])
+
+  ## whole cell solutions
+  # solve on actual cell domain
+  prefix = "multi_clustered"
+  meshFileCellular= root+prefix+"_mesh.xml.gz"
+  subdomainFileCellular= root+prefix+"_subdomains.xml.gz"
+  if(debug==0):
+    cellDomWhole = CellularDomain(meshFileCellular,subdomainFileCellular)
+  else:
+    cellDomWhole = DefaultUnitDomain()
+
+  cellDomWhole.Setup(type="field")
+  # TODO: Need to replace, since using time-dep Neumann
+  cellDomWhole.AssignBC()
+  cellDomWhole.problem.d_eff = cellDomUnit.problem.d_eff
+  print "Solving molecular unit cell using %s"% (meshFileCellular)
+  solve_homogenized_whole(cellDomWhole.problem,cellDomUnit.problem,molDomUnit.problem,debug=debug)
+
+# Solves homogenized equations for globular protein embedded inside spherical cellular subdomain 
+def SolveGlobularHomog(root="./",debug=0):
 
   ## Setup
   root = "/home/huskeypm/scratch/homog/mol/"
@@ -265,15 +343,7 @@ def SolveHom(root="./",debug=0):
   molDomUnit.AssignBC()
 
   # get fractional volume 
-  cellProblem = cellDomUnit.problem
-  molProblem = molDomUnit.problem
-  volUnitCell = cellProblem.volume + molProblem.volume 
-  cellProblem.gamma = cellProblem.volume/volUnitCell
-  cellProblem.volUnitCell = volUnitCell
-  print "cell frac vol: %f" % cellProblem.gamma
-  molProblem.gamma = molProblem.volume/volUnitCell
-  molProblem.volUnitCell = volUnitCell
-  print "mol frac vol: %f" % molProblem.gamma
+  CalcFractionalVolumes(cellDomUnit,molDomUnit)
 
 
   ## Solve unit cell problems  
@@ -353,5 +423,9 @@ if __name__ == "__main__":
 
 
   debug =0
-  SolveHom(debug=debug)
+  # globular case
+  #SolveGlobularHomog(debug=debug)
+
+  # TnC/cylindrical case
+  SolveMyofilamentHomog()
 

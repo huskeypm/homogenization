@@ -20,18 +20,32 @@ class MolecularUnitDomain(Domain):
   def Setup(self,type="scalar"):
     # mesh
     problem = self.problem
-    problem.mesh = Mesh(problem.fileMesh)
+    mesh = Mesh(problem.fileMesh)
+    problem.mesh = mesh
     # mesh is in A, so converting to um
-    problem.mesh.coordinates()[:] *= parms.ANG_TO_UM
+    mesh.coordinates()[:] *= parms.ANG_TO_UM
+
+
+    # rotate to align z axis of molecule with x axis of myocyte
+    print "WARNING: need to rotate mesh to align with myocyte. (my code seemed to cause PETSC error)"
+    #x = mesh.coordinates()[:,0]
+    #z = mesh.coordinates()[:,2]
+    #mesh.coordinates()[:,0] = -1 * z[:]
+    #mesh.coordinates()[:,2] = x[:]
+    #V = FunctionSpace(mesh,"CG",1)
+    #v = Function(V)
+    #File("test.pvd") << v
+    #quit()
+
 
     self.type = type
     if(self.type=="scalar"):
-        problem.V = FunctionSpace(problem.mesh,"CG",1)
+        problem.V = FunctionSpace(mesh,"CG",1)
     elif(self.type=="field"):
-        problem.V = VectorFunctionSpace(problem.mesh,"CG",1)
+        problem.V = VectorFunctionSpace(mesh,"CG",1)
 
     problem.subdomains = MeshFunction(
-      "uint", problem.mesh, problem.fileSubdomains)
+      "uint", mesh, problem.fileSubdomains)
     #self.markers = [1,4,5]
 
 
@@ -55,8 +69,13 @@ class MolecularUnitDomain(Domain):
     bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerActiveSite)
     # outer boundary
     bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerOuterBoundary)
+    problem.bcs = [bc0,bc1]
+
+
+    #print "WARNING: I HAVE PUT AN INCORRECT BC IN FOR TESTING"
+    #bc2 = DirichletBC(problem.V,u0,problem.subdomains,markerMolecularBoundary)
+    #problem.bcs.append(bc2)
     # neum
 
-    problem.bcs = [bc0,bc1]
 
 
