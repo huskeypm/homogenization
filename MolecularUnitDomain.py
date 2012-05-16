@@ -57,6 +57,8 @@ class MolecularUnitDomain(Domain):
     problem = self.problem
 
     print "Probably don't have the right BCs yet"
+    # TODO: might need to handle BC at active site as a mixed boundary
+    # condition to take into account saturation
     if(self.type=="scalar"):
         u0 = Constant(0.)
         u1 = Constant(1.)
@@ -64,17 +66,15 @@ class MolecularUnitDomain(Domain):
         u0 = Constant((0.,0,0.))
         u1 = Constant((1.,1.,1.))
 
+    # use user-provided BC instead  
+    if(uBoundary != 0):
+      u1 = uBoundary
+
+
     # molec boundary
     bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerActiveSite)
     # outer boundary
     bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerOuterBoundary)
     problem.bcs = [bc0,bc1]
-
-
-    #print "WARNING: I HAVE PUT AN INCORRECT BC IN FOR TESTING"
-    #bc2 = DirichletBC(problem.V,u0,problem.subdomains,markerMolecularBoundary)
-    #problem.bcs.append(bc2)
-    # neum
-
 
 

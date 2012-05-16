@@ -65,8 +65,56 @@ def solve_homogeneous_unit(domain,type="field",debug=0):
 
   problem.d_eff = d_eff
 
+# solve steady state diffusion problem with anisotropic diff constant
+def build_steadystate(theDomain):
+  problem = theDomain.problem
+
+  # 3x3 diff matric 
+  Dii  = Constant((problem.d_eff[0],problem.d_eff[1],problem.d_eff[2]))
+  Dij = diag(Dii)  # for now, but could be anisotropic
+
+  # build LHS
+  u,v = TrialFunction(problem.V), TestFunction(problem.V)
+  A = inner(Dij*grad(u), grad(v))*dx
+
+  # init [not actually used in PDE soln]
+  problem.x = Function(problem.V)
+  problem.x.vector()[:] = parms.concInitial
+
+  out = File(problem.name+"_homogenized.pvd") 
+
+  # assign 
+  problem.A = A
+  problem.u = u
+  problem.v = v
+  problem.out = out
+
+# 
+# solves steady state diuffusion equation using flux, outerbounday conc
+# provided by user 
+def solve_steadystate(theDomain,outerconc,flux):
+  problem = theDomain.problem 
+  A = problem.A
+  v = problem.v
+
+  # source term indicative of flux betwen compartments
+  n = FacetNormal(problem.mesh)
+  L = flux*dot(n,problem.v)*ds
+  
+  boundaryConc = Constant((outerconc,outerconc,outerconc))
+  theDomain.AssignBC( uBoundary=boundaryConc )
+
+  x = Function(problem.V)
+  solve(A==L,x,problem.bcs)
+
+  problem.x.vector()[:] = x.vector()[:]
+
+  problem.out << x
+
+
+
 # add in (time-dependent) flux condition
-def getb(problem,t=0):
+def buildRHSFlux(problem,t=0,j=0):
   print "Replace w real flux"
   mesh = problem.mesh
   n = FacetNormal(mesh)
@@ -75,8 +123,17 @@ def getb(problem,t=0):
   ## NOTE: I think it makes sense to keep this as simple as possible (e.g. no complicated fluxes or markers) 
   ## since mostly likely what I want is already in subcell. 
   flux = problem.dudn # hopefull the expression is getting updated with each time step 
+  flux.t = t # update Expression 
+
   E = flux*dot(n,problem.v)*ds
   b  = assemble(E)
+
+  # add in flux, if non-zero
+  if(j!=0):
+    E1 = j*dot(n,problem.v)*ds
+    b1 = assemble(E)
+    b += b1    
+
   return b
 
 # builds matrices, etc, for time dependent solution 
@@ -98,7 +155,7 @@ def build_timedep(theDomain):
   M = assemble(inner(u,v)*dx,mesh=problem.mesh)
 
   # TODO check on this 
-  b = getb(problem)
+  b = buildRHSFlux(problem)
   # for multiple bcs (though currently we do not have any dirichlet)
   for bc in problem.bcs:
      bc.apply(A,b)
@@ -107,7 +164,7 @@ def build_timedep(theDomain):
   # init cond
   u_n = Function(problem.V)
   xS = u_n.vector()
-  xS[:] = 0.1 # initial conc  
+  xS[:] = parms.concInitial   
   problem.x = Function(problem.V) # not sure why I did this 
   problem.x.vector()[:] = xS[:]
 
@@ -120,9 +177,38 @@ def build_timedep(theDomain):
   problem.b = b
   problem.xS = xS
   problem.out = out
+
+# update matrices in time dep eqns
+def update_timedep(theDomain,dt,flux):
+  problem = theDomain.problem
+
+  # LHS
+  problem.A.assign(problem.K)                                              
+  print "I don't think this term is correct for the 3x3 diff matrix"           
+  problem.A *= parms.d*dt                                                    
+  problem.A += problem.M         
+
+  # RHS
+  b1 = buildRHSFlux(problem,j=flux)
+  problem.b=b1
+
+  # add in mass matri
+  problem.b += problem.M*problem.xS
+
+  for bc in problem.bcs:
+    bc.apply(problem.A,problem.b)
+
+  ## solve and store 
+  solve(problem.A,problem.xS,problem.b,"gmres","default")
+
+  # store solution 
+  problem.x.vector()[:] = problem.xS[:]
+
+  # store results 
+  print "probably either want to project or plot single component"
+  problem.out << problem.x
+
   
-
-
  
 ## Coupled problem (need to check on neumann confs)
 # NOTE: assuming molecular domain is in steady state, so only solving
@@ -134,74 +220,15 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
   unitmol = unitmolDomain.problem
 
 
-  # store output 
-
   ## molecular domain (steady state)
-  # make Diff matrix
   print "Solving molecular steady state..."
-  #Dii  = Constant((wholecell.d_eff[0],wholecell.d_eff[1],wholecell.d_eff[2]))
-  #Dij = diag(Dii)  # for now, but could be anisotropic
-  #u,v = TrialFunction(unitmol.V), TestFunction(unitmol.V)
-  #A = inner(Dij*grad(u), grad(v))*dx
-  #L = (beta  * v)*dx
-  #x = Function(unitmol.V)
-  d = 1
-  Dii  = Constant((d,d,d))
-  Dij = diag(Dii)  # for now, but could be anisotropic
-  
-  u,v = TrialFunction(unitmol.V), TestFunction(unitmol.V)
-  A = inner(Dij*grad(u), grad(v))*dx
-  # source term indicative of flux betwen compartments
-  c = Constant((1,1,1))
-  L = inner(c,v)*dx
-  
-  print "Should I use avg cell conc as dirichlet?"
-  print "specific to moleculare case"
-  unitmolDomain.AssignBC( uBoundary=Constant((1.,1.,1.)) )
-  #bc0 = DirichletBC(unitmol.V, Constant((0.,0.,0.)), unitmol.subdomains,1)
-  #bc1 = DirichletBC(unitmol.V, Constant((1.,1.,1.)), unitmol.subdomains,5)
-  #bcs = [bc0,bc1]
-  x = Function(unitmol.V)
-  solve(A==L,x,unitmol.bcs)
-  File(unitmol.name+"_homogenized.pvd") << x
-  print "TODO: start w initial conc and add source term. Not sure what BC"
-
+  build_steadystate(unitmolDomain)
 
   ## Wholecell
   build_timedep(wholecellDomain)
-#  print "Solving time-dependent cellular problem"
-#  # make Diff matrix
-#  Dii  = Constant((wholecell.d_eff[0],wholecell.d_eff[1],wholecell.d_eff[2]))
-#  Dij = diag(Dii)  # for now, but could be anisotropic
-#  # Assembly of the K, M and A matrices
-#  u,v = TrialFunction(wholecell.V), TestFunction(wholecell.V)
-#  wholecell.u = u
-#  wholecell.v = v
-#  a =inner(Dij * grad(u), grad(v))*dx
-#  K = assemble(a,mesh=wholecell.mesh)
-#  A = K.copy()
-#  # TODO check on this
-#  M = assemble(inner(u,v)*dx,mesh=wholecell.mesh)
-#
-#  # TODO check on this 
-#  b = getb(wholecell)
-#  # for multiple bcs (though currently we do not have any dirichlet)
-#  for bc in wholecell.bcs:
-#     bc.apply(A,b)
-#
-#
-#  # init cond
-#  u_n = Function(wholecell.V)
-#  x = u_n.vector()
-#  x[:] = 0.1 # initial conc  
-#  wholecell.x = Function(wholecell.V) # not sure why I did this 
-#  wholecell.x.vector()[:] = x[:]
-#
-#  out  = File(wholecell.name+"_homogenized.pvd")
 
 
-
-  # time parms 
+  ## time parms 
   dt =0.005
   t = 0.
   if(debug ==0):
@@ -227,7 +254,7 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
     # concept seems tobe relevant only for unit cell??) 
     # NOTE: I'm not so sure I need to have a flux between molecular domain and cellular domain, since
     # we assume that molecular domain is at steady state and Dirichlet on boundary is equal to cellular conc
-    k = 1
+    k = 0.001
     hack = 0.5
     jcell = k*(wholecell.conc - hack*unitmol.conc)
     print "wholecell: %f" % wholecell.conc
@@ -235,60 +262,23 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
     jmol  = -jcell
 
     # TODO add scale factors (are these consistent)
-    #print "WARNING: cmtd out"
-    #jcell*= unitcell.beta / unitcell.gamma
-    #jmol *= unitmol.beta / unitmol.gamma
+    jcell*= unitcell.surfaceArea/ unitcell.gamma
+    jmol *= unitmol.surfaceArea/ unitmol.gamma
+    print "jcell %f" % jcell
     
     # solve cell
     # JOHAN
     print "t %f" % t
     t  += float(dt)
-    wholecell.A.assign(wholecell.K)
-    print "I don't think this term is correct for the 3x3 diff matrix"
-    wholecell.A *= parms.d*dt
-    wholecell.A += wholecell.M
+    
+    print "Need to add in coupling between molecular and cellular"
+    update_timedep(wholecellDomain,dt,jcell)
 
     #  TODOGoel: how/where is the surface defined here? It seems like the boundaries within
     # the unit cell are 'embedded' into the large cell description, so are no longer
     # boundaries
     print" TODO - note: ds needs to be limited to boundary between cell and microdomains [eq use ds(2)]"
-
-    # cell + unitmolec coupling
-    #print"FOR NOW IGNORING MOLEC CONTRIB"
-    #E = cell.d_eff * assemble( jcell * cell.v * ds, mesh=cell.mesh)
-    #b += E
-
-    # outer cell boundary
-    # TODO check on this 
-    b1 = getb(wholecell)
-    wholecell.b=b1
-
-    # add in mass matri
-    wholecell.b += wholecell.M*wholecell.xS    
-
-    #if(hasattr(wholecell,'bc')):
-    #  wholecell.bc.apply(A,b)
-    for bc in wholecell.bcs:
-      bc.apply(wholecell.A,wholecell.b)
-
-    ## solve and store 
-    solve(wholecell.A,wholecell.xS,wholecell.b,"gmres","default")
-
-    # store solution 
-    wholecell.x.vector()[:] = wholecell.xS[:]
-
-    # store results 
-    print "probably either want to project or plot single component"
-    wholecell.out << wholecell.x
-
-
-    # TODO? solv unitmol
-    #F = unitmol.diff_eff * grad(unitmol.u) * grad(unitmol.v)
-    #F += unitmol.diff_eff( junitmol * unitmol.v)
-    #M = 0
-    #solve(F==M,unitmol.u)
-    #write
-
+    solve_steadystate(unitmolDomain,wholecell.conc,jmol)
 
 
   print "Finished!"
@@ -492,11 +482,10 @@ if __name__ == "__main__":
 
   # paths hardcoded insside
   #Debug()
-  Debug2()
-  quit()
+  #Debug2()
+  #quit()
 
 
-  debug =0
   # globular case
   #SolveGlobularHomog(debug=debug)
 
