@@ -6,10 +6,23 @@
 ## TODO
 # validate against COMSOL
 # validate against Goel? (if mesh isn't too difficult)
+# need to check on how to apply periodic BC 
 # understand what BC to apply to problem 
 # verify 'LCC' flux is being applied appopriately 
 # Looks like I need to homogenize the fluxes as well (see Higgins) 
 # add in smoluchowski component 
+
+# Sub domain for Periodic boundary condition
+# NOT PRESENTLY USED 
+class PeriodicBoundary(SubDomain):
+
+    def inside(self, x, on_boundary):
+        return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
+
+    def map(self, x, y):
+        y[0] = x[0] - 1.0
+        y[1] = x[1]
+
 
 from dolfin import *
 import numpy as np
@@ -434,6 +447,40 @@ def SolveGlobularHomog(root="./",debug=0):
   print "Solving macro equations using %s"% (meshFileCellular)
   solve_homogenized_whole(cellDomWhole,cellDomUnit,molDomUnit,debug=debug)
 
+def ComsolEx():
+
+  molDomUnit = DefaultUnitDomain(type="field")
+  molDomUnit.Setup()
+  molDomUnit.AssignBC()
+
+  #mesh1= UnitSphere(5,5,5)
+  # make same size as comsol ex. 
+  molDomUnit.problem.mesh.coordinates()[:]*0.5005 
+
+  # not sure if cube is even used in the model - looks like just a sphere here
+  #mesh2 = UnitCube(5,5,5)
+  # Assumed in params()
+
+  #convective flux source of -1?? - ah, due to (del^2 u + I)
+
+  # NOTE: need to modify to handle PBC for field, since constraint loation is differnet for each solution vector component
+  print "Need to enforce periodic bc for field" 
+  # looks like there's some kind of PBC at either side of the sphere (continuity)
+  # define 'periodic boundary' at R > 0.5 (hence using a radius of 0.5005)
+  pbc = PeriodicBoundary()
+  bc1 = PeriodicBC(V, pbc)
+  print "need to impose PBC for FLUXes as well"
+#
+  identifies pt at 0,0,0 
+  # zero flux applied to all sphere boundaries 
+
+  ## soln 
+
+  #???CalcFractionalVolumes(cellDomUnit,molDomUnit)
+
+  solve_homogeneous_unit(cellDomUnit,type="field")
+  
+
 
 # example 2.7 in Goel paper
 ##def GoelEx2p7():
@@ -481,7 +528,7 @@ if __name__ == "__main__":
 
 
   # paths hardcoded insside
-  #Debug()
+  ComsolEx()
   #Debug2()
   #quit()
 
@@ -490,5 +537,5 @@ if __name__ == "__main__":
   #SolveGlobularHomog(debug=debug)
 
   # TnC/cylindrical case
-  SolveMyofilamentHomog()
+  #SolveMyofilamentHomog()
 
