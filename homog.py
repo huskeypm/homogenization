@@ -39,7 +39,10 @@ from CellularUnitDomain_TnC import *
 import scalar
 import field
 
+iso=1 
 
+
+outbase= "/tmp/outs/"
 
 class empty:pass
 
@@ -94,7 +97,9 @@ def build_steadystate(theDomain):
   problem.x = Function(problem.V)
   problem.x.vector()[:] = parms.concInitial
 
-  out = File(problem.name+"_homogenized.pvd") 
+  outname =outdir+problem.name+"_homogenized_stdy.pvd"
+  print "Writing outputs to %s" % outname 
+  out = File(outname) 
 
   # assign 
   problem.A = A
@@ -122,7 +127,11 @@ def solve_steadystate(theDomain,outerconc,flux):
 
   problem.x.vector()[:] = x.vector()[:]
 
-  problem.out << x
+  # project and store
+  #Vp = FunctionSpace(problem.mesh,"CG",1)
+  #up = project(x[0], Vp)
+  #problem.out << up
+  problem.out << x 
 
 
 
@@ -154,6 +163,9 @@ def build_timedep(theDomain):
   problem = theDomain.problem 
 
   # 3x3 diff matric 
+  print "Deff"
+  print problem.d_eff
+  #quit()
   Dii  = Constant((problem.d_eff[0],problem.d_eff[1],problem.d_eff[2]))
   Dij = diag(Dii)  # for now, but could be anisotropic
 
@@ -181,7 +193,9 @@ def build_timedep(theDomain):
   problem.x = Function(problem.V) # not sure why I did this 
   problem.x.vector()[:] = xS[:]
 
-  out  = File(problem.name+"_homogenized.pvd")
+  outname =outdir+problem.name+"_homogenized_tdep.pvd"
+  print "Writing outputs to %s" % outname 
+  out = File(outname) 
 
   # make assignments
   problem.K = K
@@ -218,7 +232,9 @@ def update_timedep(theDomain,dt,flux):
   problem.x.vector()[:] = problem.xS[:]
 
   # store results 
-  print "probably either want to project or plot single component"
+  #Vp = FunctionSpace(problem.mesh,"CG",1)
+  #up = project(problem.x[0], Vp)
+  #problem.out << up
   problem.out << problem.x
 
   
@@ -242,13 +258,9 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
 
 
   ## time parms 
-  dt =0.005
+  dt =parms.dt
+  tStep = parms.tStep
   t = 0.
-  if(debug ==0):
-    tStep = 10
-  else:
-    tStep= 2
-  
   tMax = tStep * dt
   
 
@@ -378,9 +390,20 @@ def SolveMyofilamentHomog(root="./",debug=0):
   print "Solving molecular unit cell using %s"% meshFileInner
   solve_homogeneous_unit(molDomUnit,type="field",debug=debug)
 
-  print "WARNING: I am CHEATING by overriding anistropic diff const"
-  molDomUnit.problem.d_eff = np.array([1.,0.1,0.1])
-  cellDomUnit.problem.d_eff = np.array([1.,0.1,0.1])
+  #molDomUnit.problem.d_eff = np.array([1.,1.,1.])
+  if(iso==1):
+    print "WARNING: I am CHEATING by overriding anistropic diff const"
+    dcheatmol= np.array([1.,1.,1.])
+    dcheatcell = np.array([1.,1.,1.])
+  elif(iso==2):
+    print "WARNING: I am CHEATING by overriding anistropic diff const"
+    dcheatmol= np.array([0.1,0.1,10.])
+    dcheatcell = np.array([10.,0.1,0.1])
+
+  molDomUnit.problem.d_eff = dcheatmol
+  cellDomUnit.problem.d_eff = dcheatcell
+  print dcheatmol
+  print dcheatcell
 
   ## whole cell solutions
   # solve on actual cell domain
@@ -517,20 +540,27 @@ def ComsolEx():
 ##
 
 if __name__ == "__main__":
-  msg="script.py <arg>"
+  msg="script.py <name>"
   remap = "none"
 
   #GoelEx2p7()
 
   import sys
-  if len(sys.argv) < 1:
+  if len(sys.argv) < 2:
       raise RuntimeError(msg)
-
+  
+  outdir = outbase+'/'+sys.argv[1]+'/'
+  print "Writing outputs to %s" % outdir
 
   # paths hardcoded insside
   ComsolEx()
   #Debug2()
   #quit()
+  sys.argv[1]
+  if(sys.argv[1]=="isocheat"):
+    iso=1
+  elif(sys.argv[1]=="nonisocheat"):
+    iso=2
 
 
   # globular case
