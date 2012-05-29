@@ -12,16 +12,6 @@
 # Looks like I need to homogenize the fluxes as well (see Higgins) 
 # add in smoluchowski component 
 
-# Sub domain for Periodic boundary condition
-# NOT PRESENTLY USED 
-class PeriodicBoundary(SubDomain):
-
-    def inside(self, x, on_boundary):
-        return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
-
-    def map(self, x, y):
-        y[0] = x[0] - 1.0
-        y[1] = x[1]
 
 
 from dolfin import *
@@ -39,17 +29,32 @@ from CellularUnitDomain_TnC import *
 import scalar
 import field
 
-iso=1 
+iso=0 
 
 
 outbase= "/tmp/outs/"
 
 class empty:pass
 
+# Sub domain for Periodic boundary condition
+# NOT PRESENTLY USED 
+class PeriodicBoundary(SubDomain):
+
+    def inside(self, x, on_boundary):
+        return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
+
+    def map(self, x, y):
+        y[0] = x[0] - 1.0
+        y[1] = x[1]
+
 
 ## solv. homog cell
 def solve_homogeneous_unit(domain,type="field",debug=0):
   problem = domain.problem
+
+
+  print "OVERRIDING MY DEBUG"
+  debug =0 
 
   ## debug mode
   if(debug==1):
@@ -422,36 +427,47 @@ def SolveMyofilamentHomog(root="./",debug=0):
   solve_homogenized_whole(cellDomWhole,cellDomUnit,molDomUnit,debug=debug)
 
 # Solves homogenized equations for globular protein embedded inside spherical cellular subdomain 
-def SolveGlobularHomog(root="./",debug=0):
+def SolveGlobularHomog(debug=0,\
+  root="./",cellPrefix="cell",molPrefix="mol"):
 
   ## Setup
-  root = "/home/huskeypm/scratch/homog/mol/"
+  #root = "/home/huskeypm/scratch/homog/mol/"
 
   # celular domain
-  prefix = "cell"
-  meshFileOuter = root+prefix+"_mesh.xml.gz"
-  subdomainFileOuter = root+prefix+"_subdomains.xml.gz"
-  cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter,type="field")
-  cellDomUnit.Setup()
-  cellDomUnit.AssignBC()
+  if(debug==0):
+    meshFileOuter = root+cellPrefix+"_mesh.xml.gz"
+    subdomainFileOuter = root+cellPrefix+"_subdomains.xml.gz"
+    cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter,type="field")
+    cellDomUnit.Setup()
+    cellDomUnit.AssignBC()
 
   # molecular domain
-  prefix = "mol"
-  meshFileInner = root+prefix+"_mesh.xml.gz"
-  subdomainFileInner = root+prefix+"_subdomains.xml.gz"
+  meshFileInner = root+molPrefix+"_mesh.xml.gz"
+  subdomainFileInner = root+molPrefix+"_subdomains.xml.gz"
   molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,type="field")
   molDomUnit.Setup()
   molDomUnit.AssignBC()
+
+
+  if(debug==1):
+    print "Overriding"
+    cellDomUnit=molDomUnit
 
   # get fractional volume 
   CalcFractionalVolumes(cellDomUnit,molDomUnit)
 
 
+
   ## Solve unit cell problems  
-  print "Solving cellular unit cell using %s" % meshFileOuter
-  solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
+  if(debug==0):
+    print "Solving cellular unit cell using %s" % meshFileOuter
+    solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
   print "Solving molecular unit cell using %s"% meshFileInner
   solve_homogeneous_unit(molDomUnit,type="field",debug=debug)
+
+  if(debug==1):
+    print "Exiting"
+    quit()
 
 
   ## whole cell solutions
@@ -494,7 +510,7 @@ def ComsolEx():
   bc1 = PeriodicBC(V, pbc)
   print "need to impose PBC for FLUXes as well"
 #
-  identifies pt at 0,0,0 
+  print "NEED TO IDENTIY identifies pt at 0,0,0" 
   # zero flux applied to all sphere boundaries 
 
   ## soln 
@@ -553,7 +569,8 @@ if __name__ == "__main__":
   print "Writing outputs to %s" % outdir
 
   # paths hardcoded insside
-  ComsolEx()
+  #ComsolEx()
+
   #Debug2()
   #quit()
   sys.argv[1]
@@ -562,9 +579,18 @@ if __name__ == "__main__":
   elif(sys.argv[1]=="nonisocheat"):
     iso=2
 
+  # ovoerride
+  print "OVERRRIDE"
+  debug =1
+  cellPrefix = ""
+  molPrefix = "molecular_volmesh"
+  root = "/home/huskeypm/bin/grids/"
+
 
   # globular case
-  #SolveGlobularHomog(debug=debug)
+  SolveGlobularHomog(debug=debug,\
+    root=root,\
+    cellPrefix=cellPrefix, molPrefix=molPrefix)
 
   # TnC/cylindrical case
   #SolveMyofilamentHomog()

@@ -42,7 +42,9 @@ def solveHomog(problem):
   Delta = Identity( mesh.ufl_cell().geometric_dimension()) #
   
   # LHS 
-  form = inner(Aij*(grad(u) + Delta), grad(v))*dx
+  print "NEED TO READ .gamer FLAG - override"
+  #form = inner(Aij*(grad(u) + Delta), grad(v))*dx
+  form = inner(Aij*(grad(u) + Delta), grad(v))*dx(1) 
   
   # note: we are mixing linear and bilinear forms, so we need to split
   # these up for assembler 

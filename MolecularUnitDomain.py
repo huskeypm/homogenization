@@ -15,6 +15,8 @@ class MolecularUnitDomain(Domain):
     problem.fileMesh = fileMesh
     problem.fileSubdomains = fileSubdomains
     problem.init = 1
+    print "Enforcing gamer==1"
+    self.gamer = 1
     problem.name = "Molecular"
 
   def Setup(self):
