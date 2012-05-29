@@ -71,14 +71,14 @@ def solve_homogeneous_unit(domain,type="field",debug=0):
   # using scalar fields 
   if(type=="scalar"):
     print "I cannot guarantee this is correct..."
-    scalar.solveHomog(problem)
-    D_eff = scalar.compute_eff_diff(problem)
+    scalar.solveHomog(domain)
+    D_eff = scalar.compute_eff_diff(domain)
     d_eff = np.array([D_eff,D_eff,D_eff])
 
   # using vector fields 
   elif (type=="field"):
-    field.solveHomog(problem)
-    d_eff = field.compute_eff_diff(problem)
+    field.solveHomog(domain)
+    d_eff = field.compute_eff_diff(domain)
 
   else:
     print "Not supported"
@@ -115,17 +115,18 @@ def build_steadystate(theDomain):
 # 
 # solves steady state diuffusion equation using flux, outerbounday conc
 # provided by user 
-def solve_steadystate(theDomain,outerconc,flux):
-  problem = theDomain.problem 
+# Specific to molecule right now 
+def solve_molecular_steadystate(molDomain,outerconc,flux):
+  problem = molDomain.problem 
   A = problem.A
   v = problem.v
 
   # source term indicative of flux betwen compartments
   n = FacetNormal(problem.mesh)
-  L = flux*dot(n,problem.v)*ds
+  L = flux*dot(n,problem.v)*ds(molDomain.markerOuterBoundary)
   
   boundaryConc = Constant((outerconc,outerconc,outerconc))
-  theDomain.AssignBC( uBoundary=boundaryConc )
+  molDomain.AssignBC( uBoundary=boundaryConc )
 
   x = Function(problem.V)
   solve(A==L,x,problem.bcs)
@@ -274,9 +275,9 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
 
     ## TODO check that flux is correct
     # assume simple flux between compartments
-    field.CalcConc(wholecell)
+    field.CalcConc(wholecellDomain)
     if(debug==0):
-      field.CalcConc(unitmol)
+      field.CalcConc(unitmolDomain)
     else:
       unitmol.conc=0.2
 
@@ -308,7 +309,8 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
     # the unit cell are 'embedded' into the large cell description, so are no longer
     # boundaries
     print" TODO - note: ds needs to be limited to boundary between cell and microdomains [eq use ds(2)]"
-    solve_steadystate(unitmolDomain,wholecell.conc,jmol)
+    print "WARNING: skipping molec stdy st until boundary marking issue fixed"
+    #DEBUGsolve_molecular_steadystate(unitmolDomain,wholecell.conc,jmol)
 
 
   print "Finished!"
@@ -388,10 +390,13 @@ def SolveMyofilamentHomog(root="./",debug=0):
 
   # get fractional volume 
   CalcFractionalVolumes(cellDomUnit,molDomUnit)
+  print"sdfsd"
+  quit()
 
   ## Solve unit cell problems  
   print "Solving cellular unit cell "
   solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
+  quit()
   print "Solving molecular unit cell using %s"% meshFileInner
   solve_homogeneous_unit(molDomUnit,type="field",debug=debug)
 
@@ -428,18 +433,18 @@ def SolveMyofilamentHomog(root="./",debug=0):
 
 # Solves homogenized equations for globular protein embedded inside spherical cellular subdomain 
 def SolveGlobularHomog(debug=0,\
-  root="./",cellPrefix="cell",molPrefix="mol"):
+  root="./",\
+  cellPrefix="cell",molPrefix="mol",wholeCellPrefix="multi_clustered"):
 
   ## Setup
   #root = "/home/huskeypm/scratch/homog/mol/"
 
   # celular domain
-  if(debug==0):
-    meshFileOuter = root+cellPrefix+"_mesh.xml.gz"
-    subdomainFileOuter = root+cellPrefix+"_subdomains.xml.gz"
-    cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter,type="field")
-    cellDomUnit.Setup()
-    cellDomUnit.AssignBC()
+  meshFileOuter = root+cellPrefix+"_mesh.xml.gz"
+  subdomainFileOuter = root+cellPrefix+"_subdomains.xml.gz"
+  cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter,type="field")
+  cellDomUnit.Setup()
+  cellDomUnit.AssignBC()
 
   # molecular domain
   meshFileInner = root+molPrefix+"_mesh.xml.gz"
@@ -449,19 +454,14 @@ def SolveGlobularHomog(debug=0,\
   molDomUnit.AssignBC()
 
 
-  if(debug==1):
-    print "Overriding"
-    cellDomUnit=molDomUnit
-
   # get fractional volume 
   CalcFractionalVolumes(cellDomUnit,molDomUnit)
 
 
 
   ## Solve unit cell problems  
-  if(debug==0):
-    print "Solving cellular unit cell using %s" % meshFileOuter
-    solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
+  print "Solving cellular unit cell using %s" % meshFileOuter
+  solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
   print "Solving molecular unit cell using %s"% meshFileInner
   solve_homogeneous_unit(molDomUnit,type="field",debug=debug)
 
@@ -472,9 +472,8 @@ def SolveGlobularHomog(debug=0,\
 
   ## whole cell solutions
   # solve on actual cell domain
-  prefix = "multi_clustered"
-  meshFileCellular= root+prefix+"_mesh.xml.gz"
-  subdomainFileCellular= root+prefix+"_subdomains.xml.gz"
+  meshFileCellular= root+wholeCellPrefix+"_mesh.xml.gz"
+  subdomainFileCellular= root+wholeCellPrefix+"_subdomains.xml.gz"
   if(debug==0):
     cellDomWhole = CellularDomain(meshFileCellular,subdomainFileCellular,type="field")
   else:
@@ -581,16 +580,23 @@ if __name__ == "__main__":
 
   # ovoerride
   print "OVERRRIDE"
-  debug =1
-  cellPrefix = ""
-  molPrefix = "molecular_volmesh"
-  root = "/home/huskeypm/bin/grids/"
+  #debug =1
+  #cellPrefix = ""
+  #molPrefix = "molecular_volmesh"
+  #root = "/home/huskeypm/bin/grids/"
+  
+  # rocce
+  root = "/home/huskeypm/scratch/homog/"
+  cellPrefix="mol/cell"
+  wholeCellPrefix="mol/multi_clustered"
+  molPrefix="120529_homog/1CID"
 
 
   # globular case
+  debug=0
   SolveGlobularHomog(debug=debug,\
     root=root,\
-    cellPrefix=cellPrefix, molPrefix=molPrefix)
+    cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix)
 
   # TnC/cylindrical case
   #SolveMyofilamentHomog()

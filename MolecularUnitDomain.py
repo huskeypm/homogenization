@@ -18,6 +18,7 @@ class MolecularUnitDomain(Domain):
     print "Enforcing gamer==1"
     self.gamer = 1
     problem.name = "Molecular"
+    self.markerOuterBoundary = markerOuterBoundary
 
   def Setup(self):
     # mesh

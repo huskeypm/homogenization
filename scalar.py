@@ -24,16 +24,21 @@ def  CalcArea(mesh, boundary=-1):
   return a
 
 # calculate concentration
-def CalcConc(problem):
-  problem.conc = assemble( problem.x * dx,mesh=problem.mesh)
-  problem.conc /= assemble( Constant(1)*dx,mesh=problem.mesh)
+def CalcConc(domain):
+  problem = domain.problem 
+  if(domain.gamer==0):
+    problem.conc = assemble( problem.x * dx,mesh=problem.mesh)
+  else:
+    problem.conc /= assemble( Constant(1)*dx(1),mesh=problem.mesh)
 
 
 ## solv. homog cell
 # See notetaker notes from 2012-04-19 (pg 11) 
 # Using first-order representation from Higgins paper ()
 # type - scalar is valid only for certain cases
-def solveHomog(problem):
+def solveHomog(domain):
+  problem = domain.problem 
+
   # use class definition for BCs, etc
   if(hasattr(problem,'init')): 
     print"Using class definition"
@@ -65,7 +70,12 @@ def solveHomog(problem):
   problem.u = u
   v = TestFunction(V) 
   problem.v = v
-  a = parms.d * inner(grad(u), grad(v))*dx 
+  if(problem.gamer==0):
+    a = parms.d * inner(grad(u), grad(v))*dx 
+  else:
+    a = parms.d * inner(grad(u), grad(v))*dx(1) 
+    print"Need to double check integration for gamer-derived meshes"
+    quit()
 
   f = Constant(0.0) 
   L = f*v*dx - dcdn*v*ds
@@ -79,9 +89,9 @@ def solveHomog(problem):
   
 
 ## compute effective diff const 
-def compute_eff_diff(problem):
+def compute_eff_diff(domain):
   from dolfin import assemble
-
+  problem = domain.problem
   gamma = CalcArea(problem.mesh,boundary=-1)
 
   # TODO need to figure out how to represent ident

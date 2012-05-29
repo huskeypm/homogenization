@@ -9,8 +9,13 @@ from params import *
 
 
 # calculate concentration
-def CalcConc(problem):
-  problem.conc = assemble( problem.x[0] * dx,mesh=problem.mesh)
+def CalcConc(domain):
+  problem = domain.problem
+  if(domain.gamer==0):
+    problem.conc = assemble( problem.x[0] * dx,mesh=problem.mesh)
+  else:
+    problem.conc = assemble( problem.x[0] * dx(1),mesh=problem.mesh)
+
   #problem.conc /= assemble( Constant(1)*dx,mesh=problem.mesh)
   problem.conc /= problem.volume
   
@@ -22,8 +27,9 @@ def CalcConc(problem):
 # See notetaker notes from 2012-04-19 (pg 11) 
 # Using first-order representation from Higgins paper ()
 # type - scalar is valid only for certain cases
-def solveHomog(problem):
+def solveHomog(domain):
   # mesh
+  problem = domain.problem
   mesh = problem.mesh
   V = problem.V
 
@@ -42,9 +48,11 @@ def solveHomog(problem):
   Delta = Identity( mesh.ufl_cell().geometric_dimension()) #
   
   # LHS 
-  print "NEED TO READ .gamer FLAG - override"
+  if(domain.gamer==0):
   #form = inner(Aij*(grad(u) + Delta), grad(v))*dx
-  form = inner(Aij*(grad(u) + Delta), grad(v))*dx(1) 
+    form = inner(Aij*(grad(u) + Delta), grad(v))*dx
+  else:
+    form = inner(Aij*(grad(u) + Delta), grad(v))*dx(1) 
   
   # note: we are mixing linear and bilinear forms, so we need to split
   # these up for assembler 
@@ -75,7 +83,8 @@ def solveHomog(problem):
 
   return problem
 
-def compute_eff_diff(problem):
+def compute_eff_diff(domain):
+  problem = domain.problem
   mesh = problem.mesh
   dim = mesh.ufl_cell().geometric_dimension()
   
@@ -87,7 +96,12 @@ def compute_eff_diff(problem):
   for i in range(dim):
     #form = (inner(grad(x[i]),Constant((1,0,0)))+Constant(1)) * dx # works 
     grad_Xi_component = inner(grad(x[i]),Constant((1,0,0)))
-    form = (grad_Xi_component + Constant(1)) * dx 
+
+    if (domain.gamer==0):
+      form = (grad_Xi_component + Constant(1)) * dx 
+    else:
+      form = (grad_Xi_component + Constant(1)) * dx(1)
+
     integrand = assemble(form)
     omegas[i] = integrand
   
