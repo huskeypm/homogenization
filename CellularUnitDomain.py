@@ -54,7 +54,13 @@ class CellularUnitDomain(Domain):
         u1 = Constant((1.,1.,1.))
 
 
-    print "WRONG BC: ned periodic "
+    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
     bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerOutsideBoundary)
     bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerInsideBoundary)
     # neum

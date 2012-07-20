@@ -4,10 +4,10 @@
 # (cell,mol) = domost()
 
 ## TODO
+# add in PBC for cell
+# use unit cell geometry that is based on the molec geom (right now its sphereically symm)  
 # validate against COMSOL
 # validate against Goel? (if mesh isn't too difficult)
-# need to check on how to apply periodic BC 
-# understand what BC to apply to problem 
 # verify 'LCC' flux is being applied appopriately 
 # Looks like I need to homogenize the fluxes as well (see Higgins) 
 # add in smoluchowski component 
@@ -28,9 +28,6 @@ from CellularUnitDomain_TnC import *
 
 import scalar
 import field
-
-iso=0 
-
 
 outbase= "/tmp/outs/"
 
@@ -396,24 +393,8 @@ def SolveMyofilamentHomog(root="./",debug=0):
   ## Solve unit cell problems  
   print "Solving cellular unit cell "
   solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
-  quit()
   print "Solving molecular unit cell using %s"% meshFileInner
   solve_homogeneous_unit(molDomUnit,type="field",debug=debug)
-
-  #molDomUnit.problem.d_eff = np.array([1.,1.,1.])
-  if(iso==1):
-    print "WARNING: I am CHEATING by overriding anistropic diff const"
-    dcheatmol= np.array([1.,1.,1.])
-    dcheatcell = np.array([1.,1.,1.])
-  elif(iso==2):
-    print "WARNING: I am CHEATING by overriding anistropic diff const"
-    dcheatmol= np.array([0.1,0.1,10.])
-    dcheatcell = np.array([10.,0.1,0.1])
-
-  molDomUnit.problem.d_eff = dcheatmol
-  cellDomUnit.problem.d_eff = dcheatcell
-  print dcheatmol
-  print dcheatcell
 
   ## whole cell solutions
   # solve on actual cell domain
@@ -452,6 +433,7 @@ def SolveGlobularHomog(debug=0,\
   molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,type="field")
   molDomUnit.Setup()
   molDomUnit.AssignBC()
+  molDomUnit.problem.meshType = "gamer"
 
 
   # get fractional volume 
@@ -460,9 +442,8 @@ def SolveGlobularHomog(debug=0,\
 
 
   ## Solve unit cell problems  
-  print "SKIPPING CELL FOR NOW"
-  #print "Solving cellular unit cell using %s" % meshFileOuter
-  #solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
+  print "Solving cellular unit cell using %s" % meshFileOuter
+  solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
   print "Solving molecular unit cell using %s"% meshFileInner
   solve_homogeneous_unit(molDomUnit,type="field",debug=debug)
 
@@ -575,13 +556,6 @@ if __name__ == "__main__":
 
   #Debug2()
   #quit()
-  sys.argv[1]
-  if(sys.argv[1]=="isocheat"):
-    iso=1
-  elif(sys.argv[1]=="nonisocheat"):
-    iso=2
-  else:
-    iso=0  # not cheating 
 
   # ovoerride
   print "OVERRRIDE"
@@ -598,7 +572,7 @@ if __name__ == "__main__":
 
 
   # globular case
-  debug=1
+  debug=0
   SolveGlobularHomog(debug=debug,\
     root=root,\
     cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix)

@@ -1,7 +1,7 @@
 
 
 class params:
-  def __init__(self,d=1):
+  def __init__(self,d=2.): # Be sure to use float 
     self.d = d 
     self.concInitial = 0.1 # [uM]
     self.ANG_TO_UM = 1e-4
