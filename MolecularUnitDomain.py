@@ -13,15 +13,20 @@ EPS = 1.e-10
 
 
 class MolecularUnitDomain(Domain):
-  def __init__(self,fileMesh,fileSubdomains,type):
+  def __init__(self,fileMesh,fileSubdomains,\
+    # scalar (wrong) or field
+    type,\
+    # doe mesh come from gamer?
+    gamer=1\
+    ):
     super(MolecularUnitDomain,self).__init__(type)
 
     problem = self.problem
     problem.fileMesh = fileMesh
     problem.fileSubdomains = fileSubdomains
     problem.init = 1
-    print "Enforcing gamer==1"
-    self.gamer = 1
+    #print "Enforcing gamer==1"
+    self.gamer = gamer
     problem.name = "Molecular"
     self.markerOuterBoundary = markerOuterBoundary
 
@@ -31,8 +36,7 @@ class MolecularUnitDomain(Domain):
     mesh = Mesh(problem.fileMesh)
     problem.mesh = mesh
     # mesh is in A, so converting to um
-    print "WARNING: skipping unit distance conversion" 
-    #mesh.coordinates()[:] *= parms.ANG_TO_UM
+    mesh.coordinates()[:] *= parms.ANG_TO_UM
 
     utilObj = util(problem)
     utilObj.GeometryInitializations(mesh)

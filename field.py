@@ -51,8 +51,9 @@ def solveHomog(domain):
   
   # Identity matrix 
   Delta = Identity( mesh.ufl_cell().geometric_dimension()) #
-  
+ 
   # LHS 
+  #print "Gamer", domain.gamer
   if(domain.gamer==0):
     form = inner(Aij*(grad(u) + Delta), grad(v))*dx
   else:
@@ -121,7 +122,7 @@ def compute_eff_diff(domain):
   print "d_eff:"
   print d_eff
 
-  print "rewighting by unit cell vol"
+  print "Reweighting by unit cell vol"
   d_eff /= problem.volUnitCell
   print d_eff
 
