@@ -6,6 +6,12 @@
 
 from dolfin import *
 from params import *
+from util import *
+
+
+
+EPS = 1.e-10
+################/////////////////
 
 
 # calculate concentration
@@ -33,14 +39,119 @@ def solveHomog(domain):
   mesh = problem.mesh
   V = problem.V
 
+  ################## /////////////////////
+  prob = problem 
+  problem.meshType = "gamer" # gamer
+  print "NOT CORRECT REMOV EME"
+  utilObj = util(problem)
+  utilObj.GeometryInitializations(mesh)
+  utilObj.DefinePBCMappings(mesh)
+
+  Vv = VectorFunctionSpace(mesh, "CG", 1)
+  class LeftRightBoundary(SubDomain):
+      def inside(self, x, on_boundary):
+          # find v1x
+          return tuple(x) in problem.targetsx
+      
+      
+      # field component 1
+      def map(self, x, y):
+          y[:] = problem.vert_mapx.get(tuple(x), x)
+      
+  class BackFrontDomain(SubDomain):
+      def inside(self, x, on_boundary):
+          # find v1x
+          return tuple(x) in problem.targetsy
+    
+    
+      # field component 1
+      def map(self, x, y): 
+          y[:] = problem.vert_mapy.get(tuple(x), x)
+    
+      
+  class TopBottomDomain(SubDomain):
+      def inside(self, x, on_boundary):
+          # find v1x
+          return tuple(x) in problem.targetsz
+    
+    
+      # field component 1
+      def map(self, x, y):
+          y[:] = problem.vert_mapz.get(tuple(x), x)
+    
+  # Sub domain for Dirichlet boundary condition
+  class CenterDomain(SubDomain):
+    
+      def inside(self, x, in_boundary):
+          return all(near(x[i], problem.center_coord[i], EPS) for i in range(problem.nDims))
+
+
+  # Create Dirichlet boundary condition
+  bcs = []
+  fixed_center = DirichletBC(Vv, Constant((0,0,0)), CenterDomain(), "pointwise")
+  bcs.append(fixed_center)
+
+  bc1 = PeriodicBC(Vv.sub(0), LeftRightBoundary())
+  bcs.append(bc1)
+  bc2 = PeriodicBC(Vv.sub(1), BackFrontDomain())
+  bcs.append(bc2)
+  bc3 = PeriodicBC(Vv.sub(2), TopBottomDomain())
+  bcs.append(bc3)
+
+  testBC = 0
+  if(testBC):
+    print "TEsting BCs"
+    bc1 =DirichletBC(Vv, Constant((1,1,1)),LeftRightBoundary())
+    bc2 =DirichletBC(Vv, Constant((1,1,1)),BackFrontDomain())
+    bc3 =DirichletBC(Vv, Constant((1,1,1)),TopBottomDomain())
+    bcs = []
+    bcs.append(fixed_center)
+    #bcs.append(bc1)
+    #bcs.append(bc2)
+    bcs.append(bc3)
+
+  # Define variational problem
+  u = TrialFunction(Vv)
+  v = TestFunction(Vv)
+  Dbulk = 2.
+  Dii  = Constant((Dbulk,Dbulk,Dbulk))
+  Aij = diag(Dii)
+  Delta = Identity( mesh.ufl_cell().geometric_dimension()) #
+  if(problem.meshType == "fenics"):
+    form = inner(Aij*(grad(u) + Delta), grad(v))*dx
+  elif(problem.meshType == "gamer"):
+    form = inner(Aij*(grad(u) + Delta), grad(v))*dx(1)
+  a = lhs(form)
+  L = rhs(form)
+
+  # Compute solution
+  u = Function(Vv)
+  solve(a == L, u, bcs)
+
+  #plot(u)
+  #plot(mesh)
+  #interactive()
+
+  # Save solution to file
+  file = File("periodic.pvd")
+  file << u
+
+
+
+
+  print "NOT CORRECT REMOV EME"
+  quit()
+  ###################//////////////////////////
+
   # Define variational problem
   u = TrialFunction(V)
   v = TestFunction(V)
   
   ## LHS terms 
   # Diffusion constant
-  #Dbulk = 2
   Dbulk = parms.d
+  print "OVERRIDING Dbulk"
+  Dbulk = 2.
   Dii  = Constant((Dbulk,Dbulk,Dbulk))
   Aij = diag(Dii)  # for now, but could be anisotropic
   
@@ -73,6 +184,11 @@ def solveHomog(domain):
   # Compute solution
   x = Function(V)
   solve(a == L, x, problem.bcs)
+
+  # not needewd
+  file = File("periodic.pvd")
+  file << x
+
   
   # Project solution to a continuous function space
   problem.x = x

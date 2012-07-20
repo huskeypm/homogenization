@@ -2,10 +2,15 @@
 from dolfin import *
 from params import *
 from Domain import *
+from util import * 
 
 markerActiveSite = 1
 markerMolecularBoundary =4
 markerOuterBoundary=5
+
+EPS = 1.e-10
+
+
 
 class MolecularUnitDomain(Domain):
   def __init__(self,fileMesh,fileSubdomains,type):
@@ -26,8 +31,12 @@ class MolecularUnitDomain(Domain):
     mesh = Mesh(problem.fileMesh)
     problem.mesh = mesh
     # mesh is in A, so converting to um
-    mesh.coordinates()[:] *= parms.ANG_TO_UM
+    print "WARNING: skipping unit distance conversion" 
+    #mesh.coordinates()[:] *= parms.ANG_TO_UM
 
+    utilObj = util(problem)
+    utilObj.GeometryInitializations(mesh)
+    utilObj.DefinePBCMappings(mesh)
 
     # rotate to align z axis of molecule with x axis of myocyte
     print "WARNING: need to rotate mesh to align with myocyte. (my code seemed to cause PETSC error)"
@@ -63,6 +72,8 @@ class MolecularUnitDomain(Domain):
     # TODO: might need to handle BC at active site as a mixed boundary
     # condition to take into account saturation
     if(self.type=="scalar"):
+        print "REPLACE THIS AS DEBUG OPTION. scalar approach is nonsensical"
+        quit()
         u0 = Constant(0.)
         u1 = Constant(1.)
     elif(self.type=="field"):
@@ -73,11 +84,66 @@ class MolecularUnitDomain(Domain):
     if(uBoundary != 0):
       u1 = uBoundary
 
+    ## PKH WAS 
+    ## molec boundary
+    #bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerActiveSite)
+    ## outer boundary
+    #bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerOuterBoundary)
+    #problem.bcs = [bc0,bc1]
 
-    # molec boundary
-    bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerActiveSite)
-    # outer boundary
-    bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerOuterBoundary)
-    problem.bcs = [bc0,bc1]
+  
+    ## Nested classes for handling periodic BCs
+    # TODO: would like to embed this in Domain.py, not sure how to do this
+    class LeftRightBoundary(SubDomain):
+        def inside(self, x, on_boundary):
+            # find v1x
+            return tuple(x) in problem.targetsx
+    
+    
+        # field component 1
+        def map(self, x, y):
+            y[:] = problem.vert_mapx.get(tuple(x), x)
+    
+    class BackFrontDomain(SubDomain):
+        def inside(self, x, on_boundary):
+            # find v1x
+            return tuple(x) in problem.targetsy
+    
+    
+        # field component 1
+        def map(self, x, y):
+            y[:] = problem.vert_mapy.get(tuple(x), x)
+    
+    
+    class TopBottomDomain(SubDomain):
+        def inside(self, x, on_boundary):
+            # find v1x
+            return tuple(x) in problem.targetsz
+    
+    
+        # field component 1
+        def map(self, x, y):
+            y[:] = problem.vert_mapz.get(tuple(x), x)
+    
+    # Sub domain for Dirichlet boundary condition
+    class CenterDomain(SubDomain):
+        def inside(self, x, in_boundary):
+            return all(near(x[i], problem.center_coord[i], EPS) for i in range(problem.nDims))
+  
 
-
+  # Create Dirichlet boundary condition
+    bcs = []
+    fixed_center = DirichletBC(problem.V, Constant((0,0,0)), CenterDomain(), "pointwise")
+    bcs.append(fixed_center)
+  
+    bc1 = PeriodicBC(problem.V.sub(0), LeftRightBoundary())
+    bcs.append(bc1)
+    bc2 = PeriodicBC(problem.V.sub(1), BackFrontDomain())
+    bcs.append(bc2)
+    bc3 = PeriodicBC(problem.V.sub(2), TopBottomDomain())
+    bcs.append(bc3)
+    
+    problem.bcs = bcs
+  
+  
+  

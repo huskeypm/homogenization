@@ -54,7 +54,7 @@ class CellularUnitDomain(Domain):
         u1 = Constant((1.,1.,1.))
 
 
-    print "Not sure if I should be using any Dirichlet BC"
+    print "WRONG BC: ned periodic "
     bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerOutsideBoundary)
     bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerInsideBoundary)
     # neum

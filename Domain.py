@@ -33,5 +33,3 @@ class Domain(object):
     problem.volume = vol
     print "Volume: %e [um^3]" % vol  
 
-
-

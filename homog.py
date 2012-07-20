@@ -460,8 +460,9 @@ def SolveGlobularHomog(debug=0,\
 
 
   ## Solve unit cell problems  
-  print "Solving cellular unit cell using %s" % meshFileOuter
-  solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
+  print "SKIPPING CELL FOR NOW"
+  #print "Solving cellular unit cell using %s" % meshFileOuter
+  #solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
   print "Solving molecular unit cell using %s"% meshFileInner
   solve_homogeneous_unit(molDomUnit,type="field",debug=debug)
 
@@ -555,7 +556,9 @@ def ComsolEx():
 ##
 
 if __name__ == "__main__":
-  msg="script.py <name>"
+  msg="""
+\nscript.py <arg>
+"""
   remap = "none"
 
   #GoelEx2p7()
@@ -577,6 +580,8 @@ if __name__ == "__main__":
     iso=1
   elif(sys.argv[1]=="nonisocheat"):
     iso=2
+  else:
+    iso=0  # not cheating 
 
   # ovoerride
   print "OVERRRIDE"
@@ -593,7 +598,7 @@ if __name__ == "__main__":
 
 
   # globular case
-  debug=0
+  debug=1
   SolveGlobularHomog(debug=debug,\
     root=root,\
     cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix)
