@@ -33,7 +33,8 @@ def CalcConc(domain):
 # See notetaker notes from 2012-04-19 (pg 11) 
 # Using first-order representation from Higgins paper ()
 # type - scalar is valid only for certain cases
-def solveHomog(domain):
+# smol - add in smol. approach 
+def solveHomog(domain,smol="false"):
   # mesh
   problem = domain.problem
   mesh = problem.mesh
@@ -48,6 +49,10 @@ def solveHomog(domain):
   Dbulk = parms.d
   Dii  = Constant((Dbulk,Dbulk,Dbulk))
   Aij = diag(Dii)  # for now, but could be anisotropic
+
+  if(smol!="false"):
+    print "Need to add smol"
+    quit()
   
   # Identity matrix 
   Delta = Identity( mesh.ufl_cell().geometric_dimension()) #
@@ -89,7 +94,9 @@ def solveHomog(domain):
   #File(problem.name+"_unit.pvd") << problem.up
 
   # save unprojected soln instead 
-  file = File(problem.name+"_unit.pvd") <<  x
+  fileName = problem.name+"_unit.pvd"
+  print "Writing ",fileName
+  File(fileName) <<  x
 
 
   return problem

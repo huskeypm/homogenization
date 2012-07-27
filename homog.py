@@ -4,13 +4,13 @@
 # (cell,mol) = domost()
 
 ## TODO
-# add in PBC for cell
+# DONE add in PBC for cell
+# add in smoluchowski component 
 # use unit cell geometry that is based on the molec geom (right now its sphereically symm)  
 # validate against COMSOL
 # validate against Goel? (if mesh isn't too difficult)
 # verify 'LCC' flux is being applied appopriately 
 # Looks like I need to homogenize the fluxes as well (see Higgins) 
-# add in smoluchowski component 
 
 
 
@@ -35,7 +35,7 @@ outbase= "/tmp/outs/"
 class empty:pass
 
 ## solv. homog cell
-def solve_homogeneous_unit(domain,type="field",debug=0):
+def solve_homogeneous_unit(domain,type="field",debug=0,smol="false"):
   problem = domain.problem
 
 
@@ -44,6 +44,7 @@ def solve_homogeneous_unit(domain,type="field",debug=0):
 
   ## debug mode
   if(debug==1):
+  #if(1):
     print "In debug mode - using stored values"
     d_eff = np.array([2.,2.,2.])
     problem.d_eff = d_eff
@@ -63,7 +64,7 @@ def solve_homogeneous_unit(domain,type="field",debug=0):
 
   # using vector fields 
   elif (type=="field"):
-    field.solveHomog(domain)
+    field.solveHomog(domain,smol=smol)
     d_eff = field.compute_eff_diff(domain)
 
   else:
@@ -405,36 +406,43 @@ def Debug2():
 def SolveHomogSystem(debug=0,\
   root="./",\
   cellPrefix="cell",molPrefix="mol",wholeCellPrefix="multi_clustered",\
-  molGamer=1): # is molecule from Gamer?
+    molGamer=1): # is molecule from Gamer?
 
   ## Setup
   #root = "/home/huskeypm/scratch/homog/mol/"
 
   # celular domain
+  #if(debug==0):
+  print "WARNING: getting a non-symm solution for spherical prob!!"
   meshFileOuter = root+cellPrefix+"_mesh.xml.gz"
   subdomainFileOuter = root+cellPrefix+"_subdomains.xml.gz"
-  cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter,type="field")
+  cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter,\
+    type="field")
   cellDomUnit.Setup()
   cellDomUnit.AssignBC()
 
   # molecular domain
   meshFileInner = root+molPrefix+"_mesh.xml.gz"
   subdomainFileInner = root+molPrefix+"_subdomains.xml.gz"
-  molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,type="field",gamer=molGamer)
+  molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,\
+    type="field",gamer=molGamer)
   molDomUnit.Setup()
   molDomUnit.AssignBC()
 
 
   # get fractional volume 
+  #if(debug==0):
   CalcFractionalVolumes(cellDomUnit,molDomUnit)
 
 
 
   ## Solve unit cell problems  
+  #if(debug==0):
   print "Solving cellular unit cell using %s" % meshFileOuter
   solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
   print "Solving molecular unit cell using %s"% meshFileInner
-  solve_homogeneous_unit(molDomUnit,type="field",debug=debug)
+  solve_homogeneous_unit(molDomUnit,type="field",debug=debug,smol="true")
+
 
   if(debug==1):
     print "Exiting"
@@ -564,6 +572,10 @@ if __name__ == "__main__":
   
   # rocce
   root = "/home/huskeypm/scratch/homog/"
+
+  # vm
+  root = "/home/huskeypm/localTemp/"
+ 
   cellPrefix="mol/cell"
   wholeCellPrefix="mol/multi_clustered"
 
@@ -572,7 +584,7 @@ if __name__ == "__main__":
 
 
   # globular case
-  debug=0
+  debug=1
   if(case=="globular"):
     molPrefix="120529_homog/1CID"
     SolveHomogSystem(debug=debug,\

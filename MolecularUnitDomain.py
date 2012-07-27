@@ -10,6 +10,48 @@ markerOuterBoundary=5
 
 EPS = 1.e-10
 
+#PKH2class LeftRightBoundary(SubDomain):
+#PKH2        def inside(self, x, on_boundary):
+#PKH2            # find v1x
+#PKH2            problem = self.problem 
+#PKH2            return tuple(x) in problem.targetsx
+#PKH2    
+#PKH2    
+#PKH2        # field component 1
+#PKH2        def map(self, x, y):
+#PKH2            problem = self.problem 
+#PKH2            y[:] = problem.vert_mapx.get(tuple(x), x)
+#PKH2    
+#PKH2class BackFrontDomain(SubDomain):
+#PKH2        def inside(self, x, on_boundary):
+#PKH2            # find v1x
+#PKH2            problem = self.problem 
+#PKH2            return tuple(x) in problem.targetsy
+#PKH2    
+#PKH2    
+#PKH2        # field component 1
+#PKH2        def map(self, x, y):
+#PKH2            problem = self.problem 
+#PKH2            y[:] = problem.vert_mapy.get(tuple(x), x)
+#PKH2    
+#PKH2    
+#PKH2class TopBottomDomain(SubDomain):
+#PKH2        def inside(self, x, on_boundary):
+#PKH2            # find v1x
+#PKH2            problem = self.problem 
+#PKH2            return tuple(x) in problem.targetsz
+#PKH2    
+#PKH2    
+#PKH2        # field component 1
+#PKH2        def map(self, x, y):
+#PKH2            problem = self.problem 
+#PKH2            y[:] = problem.vert_mapz.get(tuple(x), x)
+#PKH2    
+#PKH2    # Sub domain for Dirichlet boundary condition
+#PKH2class CenterDomain(SubDomain):
+#PKH2        def inside(self, x, in_boundary):
+#PKH2            problem = self.problem 
+#PKH2            return all(near(x[i], problem.center_coord[i], EPS) for i in range(problem.nDims))
 
 
 class MolecularUnitDomain(Domain):
@@ -72,7 +114,7 @@ class MolecularUnitDomain(Domain):
   def AssignBC(self,uBoundary=0):
     problem = self.problem
 
-    print "Probably don't have the right BCs yet"
+    #print "Probably don't have the right BCs yet"
     # TODO: might need to handle BC at active site as a mixed boundary
     # condition to take into account saturation
     if(self.type=="scalar"):
@@ -98,53 +140,65 @@ class MolecularUnitDomain(Domain):
   
     ## Nested classes for handling periodic BCs
     # TODO: would like to embed this in Domain.py, not sure how to do this
-    class LeftRightBoundary(SubDomain):
-        def inside(self, x, on_boundary):
-            # find v1x
-            return tuple(x) in problem.targetsx
-    
-    
-        # field component 1
-        def map(self, x, y):
-            y[:] = problem.vert_mapx.get(tuple(x), x)
-    
-    class BackFrontDomain(SubDomain):
-        def inside(self, x, on_boundary):
-            # find v1x
-            return tuple(x) in problem.targetsy
-    
-    
-        # field component 1
-        def map(self, x, y):
-            y[:] = problem.vert_mapy.get(tuple(x), x)
-    
-    
-    class TopBottomDomain(SubDomain):
-        def inside(self, x, on_boundary):
-            # find v1x
-            return tuple(x) in problem.targetsz
-    
-    
-        # field component 1
-        def map(self, x, y):
-            y[:] = problem.vert_mapz.get(tuple(x), x)
-    
-    # Sub domain for Dirichlet boundary condition
-    class CenterDomain(SubDomain):
-        def inside(self, x, in_boundary):
-            return all(near(x[i], problem.center_coord[i], EPS) for i in range(problem.nDims))
+#    class LeftRightBoundary(SubDomain):
+#        def inside(self, x, on_boundary):
+#            # find v1x
+#            return tuple(x) in problem.targetsx
+#    
+#    
+#        # field component 1
+#        def map(self, x, y):
+#            y[:] = problem.vert_mapx.get(tuple(x), x)
+#    
+#    class BackFrontDomain(SubDomain):
+#        def inside(self, x, on_boundary):
+#            # find v1x
+#            return tuple(x) in problem.targetsy
+#    
+#    
+#        # field component 1
+#        def map(self, x, y):
+#            y[:] = problem.vert_mapy.get(tuple(x), x)
+#    
+#    
+#    class TopBottomDomain(SubDomain):
+#        def inside(self, x, on_boundary):
+#            # find v1x
+#            return tuple(x) in problem.targetsz
+#    
+#    
+#        # field component 1
+#        def map(self, x, y):
+#            y[:] = problem.vert_mapz.get(tuple(x), x)
+#    
+#    # Sub domain for Dirichlet boundary condition
+#    class CenterDomain(SubDomain):
+#        def inside(self, x, in_boundary):
+#            return all(near(x[i], problem.center_coord[i], EPS) for i in range(problem.nDims))
   
 
   # Create Dirichlet boundary condition
     bcs = []
-    fixed_center = DirichletBC(problem.V, Constant((0,0,0)), CenterDomain(), "pointwise")
+    #PKHfixed_center = DirichletBC(problem.V, Constant((0,0,0)), CenterDomain(), "pointwise")
+    centerDomain = self.CenterDomain()
+    centerDomain.problem = self.problem
+    fixed_center = DirichletBC(problem.V, Constant((0,0,0)), centerDomain, "pointwise")
     bcs.append(fixed_center)
   
-    bc1 = PeriodicBC(problem.V.sub(0), LeftRightBoundary())
+    #PKHbc1 = PeriodicBC(problem.V.sub(0), LeftRightBoundary())
+    leftRightBoundary=self.LeftRightBoundary()
+    leftRightBoundary.problem = self.problem
+    bc1 = PeriodicBC(problem.V.sub(0), leftRightBoundary)
     bcs.append(bc1)
-    bc2 = PeriodicBC(problem.V.sub(1), BackFrontDomain())
+    #PKHbc2 = PeriodicBC(problem.V.sub(1), BackFrontDomain())
+    backFrontDomain=self.BackFrontDomain()
+    backFrontDomain.problem = self.problem
+    bc2 = PeriodicBC(problem.V.sub(1), backFrontDomain)
     bcs.append(bc2)
-    bc3 = PeriodicBC(problem.V.sub(2), TopBottomDomain())
+    #PKHbc3 = PeriodicBC(problem.V.sub(2), TopBottomDomain())
+    topBottomDomain=self.TopBottomDomain()
+    topBottomDomain.problem = self.problem
+    bc3 = PeriodicBC(problem.V.sub(2), topBottomDomain)
     bcs.append(bc3)
     
     problem.bcs = bcs
