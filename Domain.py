@@ -35,5 +35,48 @@ class Domain(object):
     problem.volume = vol
     print "Volume: %e [um^3]" % vol  
 
+  class LeftRightBoundary(SubDomain):
+          def inside(self, x, on_boundary):
+              # find v1x
+              problem = self.problem 
+              return tuple(x) in problem.targetsx
+      
+      
+          # field component 1
+          def map(self, x, y):
+              problem = self.problem 
+              y[:] = problem.vert_mapx.get(tuple(x), x)
+      
+  class BackFrontDomain(SubDomain):
+          def inside(self, x, on_boundary):
+              # find v1x
+              problem = self.problem 
+              return tuple(x) in problem.targetsy
+      
+      
+          # field component 1
+          def map(self, x, y):
+              problem = self.problem 
+              y[:] = problem.vert_mapy.get(tuple(x), x)
+      
+      
+  class TopBottomDomain(SubDomain):
+          def inside(self, x, on_boundary):
+              # find v1x
+              problem = self.problem 
+              return tuple(x) in problem.targetsz
+      
+      
+          # field component 1
+          def map(self, x, y):
+              problem = self.problem 
+              y[:] = problem.vert_mapz.get(tuple(x), x)
+      
+      # Sub domain for Dirichlet boundary condition
+  class CenterDomain(SubDomain):
+          def inside(self, x, in_boundary):
+              problem = self.problem 
+              return all(near(x[i], problem.center_coord[i], EPS) for i in range(problem.nDims))
+
 
 

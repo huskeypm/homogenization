@@ -61,10 +61,24 @@ class CellularUnitDomain(Domain):
         u1 = Constant((1.,1.,1.))
 
 
-    print "Not sure if I should be using any Dirichlet BC"
-    bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerOutsideBoundary)
-    bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerInsideBoundary)
-    # neum
+#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
+#PKH    bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerOutsideBoundary)
+#PKH    bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerInsideBoundary)
+#PKH    # neum
+#PKH
+#PKH    problem.bcs = [bc0,bc1]
+    bcs = []
+    #PKHfixed_center = DirichletBC(problem.V, Constant((0,0,0)), CenterDomain(), "pointwise")
+    centerDomain = self.CenterDomain()
+    centerDomain.problem = self.problem
+    fixed_center = DirichletBC(problem.V, Constant((0,0,0)), centerDomain, "pointwise")
+    bcs.append(fixed_center)
 
     #PKHbc1 = PeriodicBC(problem.V.sub(0), LeftRightBoundary())
     leftRightBoundary=self.LeftRightBoundary()

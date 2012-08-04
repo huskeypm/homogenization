@@ -6,6 +6,12 @@
 
 from dolfin import *
 from params import *
+from util import *
+
+
+
+EPS = 1.e-10
+################/////////////////
 
 
 # calculate concentration
@@ -40,7 +46,6 @@ def solveHomog(domain,smol="false"):
   
   ## LHS terms 
   # Diffusion constant
-  #Dbulk = 2
   Dbulk = parms.d
   Dii  = Constant((Dbulk,Dbulk,Dbulk))
   Aij = diag(Dii)  # for now, but could be anisotropic
@@ -51,10 +56,10 @@ def solveHomog(domain,smol="false"):
   
   # Identity matrix 
   Delta = Identity( mesh.ufl_cell().geometric_dimension()) #
-  
+ 
   # LHS 
+  #print "Gamer", domain.gamer
   if(domain.gamer==0):
-  #form = inner(Aij*(grad(u) + Delta), grad(v))*dx
     form = inner(Aij*(grad(u) + Delta), grad(v))*dx
   else:
     form = inner(Aij*(grad(u) + Delta), grad(v))*dx(1) 
@@ -78,13 +83,21 @@ def solveHomog(domain,smol="false"):
   # Compute solution
   x = Function(V)
   solve(a == L, x, problem.bcs)
-  
-  # Project solution to a continuous function space
   problem.x = x
-  problem.up = project(x, V=V)
+
+  
+  ## Project solution to a continuous function space
+  # WARNING: this projection doesn't seem to give me meaningful output (e.q solns == 0)
+  #problem.up = project(x, V=V)
   
   # save soln
-  File(problem.name+"_unit.pvd") << problem.up
+  #File(problem.name+"_unit.pvd") << problem.up
+
+  # save unprojected soln instead 
+  fileName = problem.name+"_unit.pvd"
+  print "Writing ",fileName
+  File(fileName) <<  x
+
 
   return problem
 
@@ -116,7 +129,7 @@ def compute_eff_diff(domain):
   print "d_eff:"
   print d_eff
 
-  print "rewighting by unit cell vol"
+  print "Reweighting by unit cell vol"
   d_eff /= problem.volUnitCell
   print d_eff
 
