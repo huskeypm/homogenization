@@ -59,7 +59,7 @@ class MolecularUnitDomain(Domain):
   def AssignBC(self,uBoundary=0):
     problem = self.problem
 
-    print "Probably don't have the right BCs yet"
+    #print "Probably don't have the right BCs yet"
     # TODO: might need to handle BC at active site as a mixed boundary
     # condition to take into account saturation
     if(self.type=="scalar"):

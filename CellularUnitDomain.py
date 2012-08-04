@@ -2,6 +2,7 @@
 from dolfin import *
 from params import *
 from Domain import *
+from util import * 
 
 
 markerInsideBoundary= 1
@@ -19,10 +20,16 @@ class CellularUnitDomain(Domain):
   def Setup(self):
     # mesh
     problem = self.problem
-    problem.mesh = Mesh(problem.fileMesh)
+    mesh = Mesh(problem.fileMesh)
+    problem.mesh = mesh 
 
     # mesh is in A, so converting to um
     problem.mesh.coordinates()[:] *= parms.ANG_TO_UM
+
+    utilObj = util(problem)
+    utilObj.GeometryInitializations(mesh)
+    utilObj.DefinePBCMappings(mesh)
+
 
 
     if(self.type=="scalar"):
@@ -59,6 +66,22 @@ class CellularUnitDomain(Domain):
     bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerInsideBoundary)
     # neum
 
-    problem.bcs = [bc0,bc1]
+    #PKHbc1 = PeriodicBC(problem.V.sub(0), LeftRightBoundary())
+    leftRightBoundary=self.LeftRightBoundary()
+    leftRightBoundary.problem = self.problem
+    bc1 = PeriodicBC(problem.V.sub(0), leftRightBoundary)
+    bcs.append(bc1)
+    #PKHbc2 = PeriodicBC(problem.V.sub(1), BackFrontDomain())
+    backFrontDomain=self.BackFrontDomain()
+    backFrontDomain.problem = self.problem
+    bc2 = PeriodicBC(problem.V.sub(1), backFrontDomain)
+    bcs.append(bc2)
+    #PKHbc3 = PeriodicBC(problem.V.sub(2), TopBottomDomain())
+    topBottomDomain=self.TopBottomDomain()
+    topBottomDomain.problem = self.problem
+    bc3 = PeriodicBC(problem.V.sub(2), topBottomDomain)
+    bcs.append(bc3)
+
+    problem.bcs = bcs
 
 

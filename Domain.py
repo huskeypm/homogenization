@@ -1,6 +1,8 @@
 from dolfin import *
 class empty:pass
 
+EPS = 1.e-10
+
 class Domain(object):
   def __init__(self,type):
     problem = empty()
