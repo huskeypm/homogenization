@@ -32,7 +32,7 @@ class DefaultUnitDomain(Domain):
   def AssignBC(self,uBoundary=0):
     problem = self.problem
 
-    print "Probably don't have the right BCs yet"
+    #print "Probably don't have the right BCs yet"
     if(self.type=="scalar"):
         u1 = Constant(1.)
     elif(self.type=="field"):
