@@ -3,10 +3,12 @@ from dolfin import *
 from params import *
 from Domain import *
 from util import * 
+import smol
 
 markerActiveSite = 1
 markerMolecularBoundary =4
 markerOuterBoundary=5
+q = 2.0 # charge Ca2+ 
 
 EPS = 1.e-10
 
@@ -105,6 +107,19 @@ class MolecularUnitDomain(Domain):
       "uint", mesh, problem.fileSubdomains)
     #self.markers = [1,4,5]
 
+    # load ESP 
+    if(0):
+      print "PUT IN SEPARATE FUNCTION"
+      Vtemp = VectorFunctionSpace(mesh,"CG",1)
+      psi = Function(Vtemp,problem.filePotential)
+      pmf = smol.ElectrostaticPMF(problem,psi,q=q, V=Vtemp)
+      problem.pmf = Function(mesh.V)
+      # assign to each cpomponent 
+      print "WARNING: I am not sure if ESP is applied correctly here"
+      problem.pmf.vector()[0,:] = pmf
+      problem.pmf.vector()[1,:] = pmf
+      problem.pmf.vector()[2,:] = pmf
+    
 
     # geom
     self.CalcGeom(problem)
