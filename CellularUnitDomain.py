@@ -27,8 +27,8 @@ class CellularUnitDomain(Domain):
     problem.mesh.coordinates()[:] *= parms.ANG_TO_UM
 
     utilObj = util(problem)
-    utilObj.GeometryInitializations(mesh)
-    utilObj.DefinePBCMappings(mesh)
+    utilObj.GeometryInitializations()
+    utilObj.DefinePBCMappings()
 
 
 
@@ -61,18 +61,6 @@ class CellularUnitDomain(Domain):
         u1 = Constant((1.,1.,1.))
 
 
-#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
-#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
-#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
-#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
-#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
-#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
-#PKH    print "WARNING: CELL IS NOT PERIODIC THEREFORE !!! WRONG !!!!"
-#PKH    bc0 = DirichletBC(problem.V,u0,problem.subdomains,markerOutsideBoundary)
-#PKH    bc1 = DirichletBC(problem.V,u1,problem.subdomains,markerInsideBoundary)
-#PKH    # neum
-#PKH
-#PKH    problem.bcs = [bc0,bc1]
     bcs = []
     #PKHfixed_center = DirichletBC(problem.V, Constant((0,0,0)), CenterDomain(), "pointwise")
     centerDomain = self.CenterDomain()

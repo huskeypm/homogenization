@@ -50,9 +50,6 @@ def solveHomog(domain,smol="false"):
   Dii  = Constant((Dbulk,Dbulk,Dbulk))
   Aij = diag(Dii)  # for now, but could be anisotropic
 
-  if(smol!="false"):
-    print "Need to add smol"
-    quit()
   
   # Identity matrix 
   Delta = Identity( mesh.ufl_cell().geometric_dimension()) #
@@ -84,11 +81,48 @@ def solveHomog(domain,smol="false"):
   x = Function(V)
   solve(a == L, x, problem.bcs)
   problem.x = x
+  problem.up = Function(problem.V)   
 
+  if(smol!="false"):
+    Vscalar = FunctionSpace(mesh,"CG",1)
+
+    print "WARNING: not using correct beta"
+    #intfact    =    exp(-parms.beta * problem.pmf)
+    intfact    =    exp(-1/0.693 * problem.pmf)
+    print "WARNING: need to verify that electrostatic part applied correctly for homogeniztion"
+    for i in range(3):
+      id = "%d" % i
+      n = problem.x[i] * intfact
+      temp = project(n,V=Vscalar)
+      fileName = problem.name+"_pmfprojected"+id+".pvd"
+      File(fileName) << temp 
+   
+      # DEBUG 
+      #test = project(x[i],V=Vscalar)
+      #fileName = problem.name+"_comp"+id+".pvd"
+      #File(fileName) << test
+      ## NO WORK fileName = problem.name+"_test2.pvd"
+      ##File(fileName) << x[0]
+
+      # apply 
+      #problem.x[i].vector()[:] = n.vector()[:]
+      #ci = project(problem.x[i]*problem.pmf,V=Vscalar)
+      #l = len(ci.vector())
+      #print i,l
+      #print len(problem.up.vector())
+      #problem.up.vector()[i*l:(i+1)*l] = ci.vector()
+
+    print "WARNING: may have to redo 'loop' over x[i] to get projection right"
+    problem.up = project(problem.x * intfact, V=V)
+
+  # leave
+  else:
+    problem.up.vector()[:] = problem.x.vector()[:]
+    ## Project solution to a continuous function space
+    # WARNING: this projection doesn't seem to give me meaningful output (e.q solns == 0)
+    #problem.up = project(x, V=V)
   
-  ## Project solution to a continuous function space
-  # WARNING: this projection doesn't seem to give me meaningful output (e.q solns == 0)
-  #problem.up = project(x, V=V)
+
   
   # save soln
   #File(problem.name+"_unit.pvd") << problem.up
@@ -96,7 +130,8 @@ def solveHomog(domain,smol="false"):
   # save unprojected soln instead 
   fileName = problem.name+"_unit.pvd"
   print "Writing ",fileName
-  File(fileName) <<  x
+  #File(fileName) <<  problem.x   
+  File(fileName) <<  problem.up
 
 
   return problem
@@ -110,10 +145,15 @@ def compute_eff_diff(domain):
   # treating each component independtly, following Goel's example in sec 2.7 
   import numpy as np
   omegas = np.zeros(dim)
-  x = problem.x
+  x = problem.up
+  print "WARNING: verify accuracy of this calculation"
+  # I iterate only over the diagonal, since my original diffusion constant is diagonal 
   for i in range(dim):
     #form = (inner(grad(x[i]),Constant((1,0,0)))+Constant(1)) * dx # works 
-    grad_Xi_component = inner(grad(x[i]),Constant((1,0,0)))
+    # Here  we suppose to be extracting the ith derivative of x[i]
+    v = [0,0,0]
+    v[i] = 1
+    grad_Xi_component = inner(grad(x[i]),Constant((v[0],v[1],v[2])))
 
     if (domain.gamer==0):
       form = (grad_Xi_component + Constant(1)) * dx 

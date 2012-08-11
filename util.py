@@ -65,9 +65,10 @@ class util:
         c -= mp
         mesh.coordinates()[i] = c
   
-  def DefinePBCMappings(self,mesh):
-    (boundMin,boundIdxMin,boundMax,boundIdxMax) = self.CalcBounds(mesh)
+  def DefinePBCMappings(self):
     prob = self.prob 
+    mesh = prob.mesh
+    (boundMin,boundIdxMin,boundMax,boundIdxMax) = self.CalcBounds(mesh)
 
     # x component 
     #v0x= np.array(([-1,0,0]))
@@ -100,8 +101,9 @@ class util:
     print v0y, " maps to " , prob.vert_mapy[ tuple(v0y)  ]
     print v0z, " maps to " , prob.vert_mapz[ tuple(v0z)  ]
 
-  def GeometryInitializations(self,mesh):
+  def GeometryInitializations(self):
     prob = self.prob 
+    mesh = prob.mesh
   
     # center
     self.CenterMesh(mesh)

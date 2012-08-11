@@ -29,6 +29,8 @@ from CellularUnitDomain_TnC import *
 import scalar
 import field
 
+smolMode = "true" # tells program that we want to solve the smol equation for the molec domain
+
 outbase= "/tmp/outs/"
 #outbase="./scratch/"
 
@@ -352,61 +354,14 @@ def Debug2():
   solve_homogenized_whole(cellDomWhole,cellDomUnit,molDomUnit)
 
 
-
-
-# Solve homogenized equations for myofilament embedded in rectilinear cellular domain
-# See notes from 120514_grids.tex as what we are doing here is a bit counterintuitive 
-##ANTIQUATEDdef SolveMyofilamentHomog(root="./",debug=0):
-##ANTIQUATED
-##ANTIQUATED  ## Setup
-##ANTIQUATED  root = "/home/huskeypm/scratch/homog/mol/"
-##ANTIQUATED
-##ANTIQUATED  # celular domain
-##ANTIQUATED  prefix = "cell"
-##ANTIQUATED  cellDomUnit = CellularUnitDomain_TnC(type="field")
-##ANTIQUATED  cellDomUnit.Setup()
-##ANTIQUATED  cellDomUnit.AssignBC()
-##ANTIQUATED
-##ANTIQUATED  # molecular domain
-##ANTIQUATED  prefix = "troponin"
-##ANTIQUATED  meshFileInner = root+prefix+"_mesh.xml.gz"
-##ANTIQUATED  subdomainFileInner = root+prefix+"_subdomains.xml.gz"
-##ANTIQUATED  molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,type="field")
-##ANTIQUATED  molDomUnit.gamer = 1
-##ANTIQUATED  molDomUnit.Setup()
-##ANTIQUATED  molDomUnit.AssignBC()
-##ANTIQUATED
-##ANTIQUATED
-##ANTIQUATED  # get fractional volume 
-##ANTIQUATED  CalcFractionalVolumes(cellDomUnit,molDomUnit)
-##ANTIQUATED
-##ANTIQUATED  ## Solve unit cell problems  
-##ANTIQUATED  print "Solving cellular unit cell "
-##ANTIQUATED  solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
-##ANTIQUATED  print "Solving molecular unit cell using %s"% meshFileInner
-##ANTIQUATED  solve_homogeneous_unit(molDomUnit,type="field",debug=debug)
-##ANTIQUATED
-##ANTIQUATED  ## whole cell solutions
-##ANTIQUATED  # solve on actual cell domain
-##ANTIQUATED  prefix = "multi_clustered"
-##ANTIQUATED  meshFileCellular= root+prefix+"_mesh.xml.gz"
-##ANTIQUATED  subdomainFileCellular= root+prefix+"_subdomains.xml.gz"
-##ANTIQUATED  if(debug==0):
-##ANTIQUATED    cellDomWhole = CellularDomain(meshFileCellular,subdomainFileCellular,type="field")
-##ANTIQUATED  else:
-##ANTIQUATED    cellDomWhole = DefaultUnitDomain(type="field")
-##ANTIQUATED
-##ANTIQUATED  cellDomWhole.Setup()
-##ANTIQUATED  cellDomWhole.AssignBC()
-##ANTIQUATED  cellDomWhole.problem.d_eff = cellDomUnit.problem.d_eff
-##ANTIQUATED  print "Solving molecular unit cell using %s"% (meshFileCellular)
-##ANTIQUATED  solve_homogenized_whole(cellDomWhole,cellDomUnit,molDomUnit,debug=debug)
-
 # Solves homogenized equations for globular protein embedded inside spherical cellular subdomain 
 def SolveHomogSystem(debug=0,\
   root="./",\
-  cellPrefix="cell",molPrefix="mol",wholeCellPrefix="multi_clustered",\
-    molGamer=1): # is molecule from Gamer?
+#  cellPrefix="cell",molPrefix="mol",wholeCellPrefix="multi_clustered",\
+  cellPrefix="none",molPrefix="none",wholeCellPrefix="none",\
+# use effective diffusion constant from molecular domain 
+  useMoldeff=1,\
+  molGamer=1): # is molecule from Gamer?
 
   ## Setup
   #root = "/home/huskeypm/scratch/homog/mol/"
@@ -414,128 +369,101 @@ def SolveHomogSystem(debug=0,\
   # celular domain
   #if(debug==0):
   print "WARNING: getting a non-symm solution for spherical prob!!"
-  meshFileOuter = root+cellPrefix+"_mesh.xml.gz"
-  subdomainFileOuter = root+cellPrefix+"_subdomains.xml.gz"
-  cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter,\
-    type="field")
-  cellDomUnit.Setup()
-  cellDomUnit.AssignBC()
+  if(cellPrefix!="none"):
+    meshFileOuter = root+cellPrefix+"_mesh.xml.gz"
+    subdomainFileOuter = root+cellPrefix+"_subdomains.xml.gz"
+    cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter,\
+      type="field")
+    cellDomUnit.Setup()
+    cellDomUnit.AssignBC()
 
   # molecular domain
-  meshFileInner = root+molPrefix+"_mesh.xml.gz"
-  subdomainFileInner = root+molPrefix+"_subdomains.xml.gz"
-  molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,\
-    type="field",gamer=molGamer)
-  molDomUnit.Setup()
-  molDomUnit.AssignBC()
+  if(molPrefix!="none"): 
+    meshFileInner = root+molPrefix+"_mesh.xml.gz"
+    subdomainFileInner = root+molPrefix+"_subdomains.xml.gz"
+    potentialFileInner = root+molPrefix+"_values.xml.gz"
+    molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,\
+      filePotential = potentialFileInner,type="field",gamer=molGamer)
+    molDomUnit.Setup()
+    molDomUnit.AssignBC()
 
 
   # get fractional volume 
   #if(debug==0):
-  CalcFractionalVolumes(cellDomUnit,molDomUnit)
-
-
+  if(molPrefix!="none" and cellPrefix!="none"): 
+    CalcFractionalVolumes(cellDomUnit,molDomUnit)
 
   ## Solve unit cell problems  
   #if(debug==0):
-  print "Solving cellular unit cell using %s" % meshFileOuter
-  solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
-  print "Solving molecular unit cell using %s"% meshFileInner
-  solve_homogeneous_unit(molDomUnit,type="field",debug=debug,smol="true")
+  if(cellPrefix!="none"): 
+    print "Solving cellular unit cell using %s" % meshFileOuter
+    solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
 
-
-  if(debug==1):
-    print "Exiting"
-    quit()
+  if(molPrefix!="none"): 
+    print "Solving molecular unit cell using %s"% meshFileInner
+    solve_homogeneous_unit(molDomUnit,type="field",debug=debug,smol=smolMode)
 
 
   ## whole cell solutions
   # solve on actual cell domain
-  meshFileCellular= root+wholeCellPrefix+"_mesh.xml.gz"
-  subdomainFileCellular= root+wholeCellPrefix+"_subdomains.xml.gz"
-  if(debug==0):
-    cellDomWhole = CellularDomain(meshFileCellular,subdomainFileCellular,type="field")
-  else:
-    cellDomWhole = DefaultUnitDomain(type="field")
-
-  cellDomWhole.Setup()
-  cellDomWhole.AssignBC()
-
-
-  # assign diff const 
-  cellDomWhole.problem.d_eff = cellDomUnit.problem.d_eff
+  if(wholeCellPrefix!="none"):
+    meshFileCellular= root+wholeCellPrefix+"_mesh.xml.gz"
+    subdomainFileCellular= root+wholeCellPrefix+"_subdomains.xml.gz"
+    if(debug==0):
+      cellDomWhole = CellularDomain(meshFileCellular,subdomainFileCellular,type="field")
+    else:
+      cellDomWhole = DefaultUnitDomain(type="field")
   
-  if(1):
-    print "WARNING: For now will assume cellular diffusion dominated by molec dom"
-    cellDomWhole.problem.d_eff = molDomUnit.problem.d_eff
+    cellDomWhole.Setup()
+    cellDomWhole.AssignBC()
+  
+  
+    # assign diff const 
+    cellDomWhole.problem.d_eff = cellDomUnit.problem.d_eff
+    
+    if(useMoldeff==1):
+      print "WARNING: For now will assume cellular diffusion dominated by molec dom"
+      cellDomWhole.problem.d_eff = molDomUnit.problem.d_eff
+  
+    # solve 
+    if(debug==0):
+      print "Solving macro equations using %s"% (meshFileCellular)
+      solve_homogenized_whole(cellDomWhole,cellDomUnit,molDomUnit,debug=debug)
 
-  # solve 
-  print "Solving macro equations using %s"% (meshFileCellular)
-  solve_homogenized_whole(cellDomWhole,cellDomUnit,molDomUnit,debug=debug)
+# Validation case for simple charged sphere 
+def Validation():
+  root = "/home/huskeypm/scratch/validation/sphere/"
+  molPrefix = "sphere"
+  #molDomUnit.problem.mesh.coordinates()[:]*0.5005 
 
-def ComsolEx():
-
-  molDomUnit = DefaultUnitDomain(type="field")
+  ## simple sphere 
+  molDomUnit = DefaultUnitDomain()
   molDomUnit.Setup()
   molDomUnit.AssignBC()
+  problem = molDomUnit.problem
+  problem.pmf = Function( FunctionSpace(problem.mesh,"CG",1))
+  problem.pmf.vector()[:] = np.arange(729)/729. - 0.5
+  #problem.pmf.vector()[:] = 0
+  File("test.pvd") << problem.pmf
+  #problem.pmf.vector()[:] = 0
+  smolMode = "true"
+  solve_homogeneous_unit(molDomUnit,type="field",debug=debug,smol=smolMode)
+  quit()
 
-  #mesh1= UnitSphere(5,5,5)
-  # make same size as comsol ex. 
-  molDomUnit.problem.mesh.coordinates()[:]*0.5005 
+  ## gamer sphere 
+  print "No electro" 
+  smolMode = "false" # tells program that we want to solve the smol equation for the molec domain
+  SolveHomogSystem(debug=debug,\
+    root=root,
+    molPrefix=molPrefix,
+    molGamer=0)
 
-  # not sure if cube is even used in the model - looks like just a sphere here
-  #mesh2 = UnitCube(5,5,5)
-  # Assumed in params()
-  print "Needs some work - see bin/dolfin/ dir"
-  quit() 
-
-  #convective flux source of -1?? - ah, due to (del^2 u + I)
-
-  # NOTE: need to modify to handle PBC for field, since constraint loation is differnet for each solution vector component
-  print "Need to enforce periodic bc for field" 
-  # looks like there's some kind of PBC at either side of the sphere (continuity)
-  # define 'periodic boundary' at R > 0.5 (hence using a radius of 0.5005)
-  print "need to impose PBC for FLUXes as well"
-#
-  print "NEED TO IDENTIY identifies pt at 0,0,0" 
-  # zero flux applied to all sphere boundaries 
-
-  ## soln 
-
-  #???CalcFractionalVolumes(cellDomUnit,molDomUnit)
-
-  solve_homogeneous_unit(cellDomUnit,type="field")
-  
-
-
-# example 2.7 in Goel paper
-##def GoelEx2p7():
-##  ## micro
-##  unitLength = np.array([0.1,0.1,1.0]) # length of microdomain in unit cell
-##  diff = Constant(2.5) # isotropic
-##
-##  # our geometry needs to look something like the 'cross' in Fig 2
-##  # creating this in Blender
-##  # mesh is crap, doesn't work
-##  meshFile = "goel.xml.gz"
-##  problem = empty()
-##  problem.mesh = Mesh(meshFile)
-##
-##  #mesh = UnitCube(6,6,6)
-##  #problem.name ="test"
-##  #problem.mesh = mesh
-##
-##  solve_homogeneous_unit(problem)
-##  quit()
-##
-##
-##  # note: authors take u0(x=[0.5,0.5,0,5]) = 0 to fix arb. const
-##  # i think I can treat this like an initial condition and set some
-##  # location in u0 to be zero.
-##  u0 = Constant(0)  # this doesn't do anything, but could use as templat ealter
-##  u_1 = interpolate(u0,V) # applies Expression u0 to FunctionSpace
-##  # solve stuff
-##  # u_1.assign(u)
+  print "With electro"
+  smolMode = "true" # tells program that we want to solve the smol equation for the molec domain
+  SolveHomogSystem(debug=debug,\
+    root=root,
+    molPrefix=molPrefix,
+    molGamer=0)
 
 
 ##
@@ -544,9 +472,19 @@ def ComsolEx():
 
 if __name__ == "__main__":
   msg="""
-\nscript.py <arg>
+\nPurpose: 
+  run homogenized problem 
+ 
+Usage:
+  homog.py -case myofilament/globular/validation <-nosmol>
+
+  where 
+    -nosmol - run molecular domain without electrostatics
+
+Notes:
 """
   remap = "none"
+  case ="none"
 
   #GoelEx2p7()
 
@@ -558,8 +496,15 @@ if __name__ == "__main__":
   print "Writing outputs to %s" % outdir
   print "WARNING: files arent writing!"
 
-  # paths hardcoded insside
-  #ComsolEx()
+  for i,arg in enumerate(sys.argv):
+    if(arg=="-nosmol"):
+      print "Disabling electrostatics contribution" 
+      smolMode = "false"
+
+    if(arg=="-case"):
+      case = sys.argv[i+1]
+ 
+
 
   #Debug2()
   #quit()
@@ -574,13 +519,14 @@ if __name__ == "__main__":
   root = "/home/huskeypm/scratch/homog/"
 
   # vm
-  root = "/home/huskeypm/localTemp/"
+  #root = "/home/huskeypm/localTemp/"
  
   cellPrefix="mol/cell"
   wholeCellPrefix="mol/multi_clustered"
 
-  case = "globular"
+  #case = "globular"
   #case = "myofilament"
+  #case = "validation"
 
 
   # globular case
@@ -598,4 +544,12 @@ if __name__ == "__main__":
       root=root,\
       cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
       molGamer=0)
+
+  elif(case=="validation"):
+    Validation()
+
+  else:
+    msg = "Case " + case + " not understood"   
+    raise RuntimeError(msg)
+
 
