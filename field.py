@@ -34,7 +34,7 @@ def CalcConc(domain):
 # Using first-order representation from Higgins paper ()
 # type - scalar is valid only for certain cases
 # smol - add in smol. approach 
-def solveHomog(domain,smol="false"):
+def solveHomog(domain,smolMode="false"):
   # mesh
   problem = domain.problem
   mesh = problem.mesh
@@ -83,7 +83,7 @@ def solveHomog(domain,smol="false"):
   problem.x = x
   problem.up = Function(problem.V)   
 
-  if(smol!="false"):
+  if(smolMode!="false"):
     Vscalar = FunctionSpace(mesh,"CG",1)
 
     print "WARNING: not using correct beta"
@@ -172,6 +172,10 @@ def compute_eff_diff(domain):
   print "Reweighting by unit cell vol"
   d_eff /= problem.volUnitCell
   print d_eff
+
+  # normalize
+  nd_eff= d_eff/ np.linalg.norm(d_eff)
+  print "Deff (normalized) ", nd_eff
 
   # store 
   problem.d_eff = d_eff

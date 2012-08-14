@@ -34,6 +34,11 @@ class MolecularUnitDomain(Domain):
     problem.name = "Molecular"
     self.markerOuterBoundary = markerOuterBoundary
 
+    if(problem.filePotential!="none"):
+      problem.smolMode="true"
+    else:
+      problem.smolMode="false"
+
   def Setup(self):
     # mesh
     problem = self.problem
@@ -68,11 +73,11 @@ class MolecularUnitDomain(Domain):
     #self.markers = [1,4,5]
 
     # load ESP 
-    if(problem.filePotential!="none"):
+    if(problem.smolMode=="true"):       
       print "PUT IN SEPARATE FUNCTION"
       Vtemp = FunctionSpace(mesh,"CG",1)
       psi = Function(Vtemp,problem.filePotential)
-      smol.ElectrostaticPMF(problem,Vtemp,psi,q=q) # pmf stored internally             
+      smol.ElectrostaticPMF(problem,psi,V=Vtemp,q=q) # pmf stored internally             
     
     # geom
     self.CalcGeom(problem)
