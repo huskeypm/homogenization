@@ -386,6 +386,7 @@ def SolveHomogSystem(debug=0,\
     potentialFileInner = root+molPrefix+"_values.xml.gz"
     molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,\
       filePotential = potentialFileInner,type="field",gamer=molGamer)
+    molDomUnit.problem.smolMode = smolMode
     molDomUnit.Setup()
     molDomUnit.AssignBC()
     results.molDomUnit = molDomUnit
@@ -584,6 +585,7 @@ Notes:
     SolveHomogSystem(debug=debug,\
       root=root,\
       cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
+      smolMode = smolMode,
       molGamer=0)
 
   else:

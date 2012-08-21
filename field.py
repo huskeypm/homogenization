@@ -84,6 +84,7 @@ def solveHomog(domain,smolMode="false"):
   problem.up = Function(problem.V)   
 
   if(smolMode!="false"):
+    print "Adding in electrostatic component" 
     Vscalar = FunctionSpace(mesh,"CG",1)
 
     print "WARNING: not using correct beta"
