@@ -510,16 +510,18 @@ if __name__ == "__main__":
   run homogenized problem 
  
 Usage:
-  homog.py -case myofilament/globular/validation/custom <-smol>
+  homog.py -case myofilament/globular/validation/custom <-smol> <-molGamer>
            -molPrefix molPrefix
 
   where 
     -smol - run molecular domain with electrostatics
+    -molGamer - molecule was prepared with Gamer
 
 Notes:
 """
   remap = "none"
   case ="none"
+  molGamer = 0 
 
   #GoelEx2p7()
 
@@ -543,6 +545,9 @@ Notes:
     if(arg=="-molPrefix"):
       molPrefix = sys.argv[i+1]
 
+    if(arg=="-molGamer"):
+      molGamer = 1
+
   #Debug2()
   #quit()
 
@@ -565,7 +570,8 @@ Notes:
     molPrefix="120529_homog/1CID"
     SolveHomogSystem(debug=debug,\
       root=root,\
-      cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix)
+      cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
+      molGamer=1)
   
   # TnC/cylindrical case
   elif(case=="myofilament"):
@@ -575,7 +581,7 @@ Notes:
     SolveHomogSystem(debug=debug,\
       root=root,\
       cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
-      molGamer=0)
+      molGamer=molGamer)
 
   elif(case=="validation"):
     Validation()
@@ -586,7 +592,7 @@ Notes:
       root=root,\
       cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
       smolMode = smolMode,
-      molGamer=0)
+      molGamer=molGamer)
 
   else:
     msg = "Case " + case + " not understood"   

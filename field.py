@@ -167,6 +167,7 @@ def compute_eff_diff(domain):
   
   omegas /= problem.gamma
   d_eff = parms.d*omegas
+  print "d: %f" % parms.d
   print "d_eff:"
   print d_eff
 
