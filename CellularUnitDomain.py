@@ -9,13 +9,15 @@ markerInsideBoundary= 1
 markerOutsideBoundary= 5
 
 class CellularUnitDomain(Domain):
-  def __init__(self,fileMesh,fileSubdomains,type):
+  def __init__(self,fileMesh,fileSubdomains,type,\
+               outpath="./",name="Cellular"):
     super(CellularUnitDomain,self).__init__(type)
 
     problem = self.problem
     problem.fileMesh = fileMesh
     problem.fileSubdomains = fileSubdomains
-    problem.name = "Cellular"
+    problem.name = name 
+    problem.outpath = outpath
 
   def Setup(self):
     # mesh

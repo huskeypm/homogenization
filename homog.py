@@ -5,7 +5,6 @@
 
 ## TODO
 # DONE add in PBC for cell
-# add in smoluchowski component 
 # use unit cell geometry that is based on the molec geom (right now its sphereically symm)  
 # validate against COMSOL
 # validate against Goel? (if mesh isn't too difficult)
@@ -29,10 +28,26 @@ from CellularUnitDomain_TnC import *
 import scalar
 import field
 
+##
+## VAR
+## 
+debug=0
 smolMode = "false" # tells program that we want to solve the smol equation for the molec domain
+case ="none"
+molGamer = 0 
+validationMode = 0
+#outbase= "/tmp/outs/"
+outbase="/home/huskeypm/scratch/homogouts/"
 
-outbase= "/tmp/outs/"
-#outbase="./scratch/"
+# rocce
+cellPrefix="none"
+wholeCellPrefix="none"
+molPrefix="none"
+root = "/home/huskeypm/scratch/homog/"
+
+# vm
+#root = "/home/huskeypm/localTemp/"
+ 
 
 class empty:pass
 
@@ -90,7 +105,7 @@ def build_steadystate(theDomain):
   problem.x = Function(problem.V)
   problem.x.vector()[:] = parms.concInitial
 
-  outname =outdir+problem.name+"_homogenized_stdy.pvd"
+  outname =outbase+problem.name+"_homogenized_stdy.pvd"
   print "Writing outputs to %s" % outname 
   out = File(outname) 
 
@@ -153,11 +168,11 @@ def buildRHSFlux(problem,t=0,j=0):
   return b
 
 # builds matrices, etc, for time dependent solution 
-def build_timedep(theDomain):
+def build_timedep(theDomain,tag=""):
   problem = theDomain.problem 
 
   # 3x3 diff matric 
-  print "Deff"
+  print "Using Deff for wholecell"
   print problem.d_eff
   #quit()
   Dii  = Constant((problem.d_eff[0],problem.d_eff[1],problem.d_eff[2]))
@@ -187,7 +202,7 @@ def build_timedep(theDomain):
   problem.x = Function(problem.V) # not sure why I did this 
   problem.x.vector()[:] = xS[:]
 
-  outname =outdir+problem.name+"_homogenized_tdep.pvd"
+  outname =outbase+tag+problem.name+"_homogenized_tdep.pvd"
   print "Writing outputs to %s" % outname 
   out = File(outname) 
 
@@ -236,7 +251,7 @@ def update_timedep(theDomain,dt,flux):
 ## Coupled problem (need to check on neumann confs)
 # NOTE: assuming molecular domain is in steady state, so only solving
 # cellular domain in time-dep fashion
-def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="field",debug=0):
+def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="field",tag="",debug=0,wholeCellOnly=0):
   # get problems
   wholecell = wholecellDomain.problem
   unitcell = unitcellDomain.problem
@@ -244,11 +259,13 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
 
 
   ## molecular domain (steady state)
-  print "Solving molecular steady state..."
-  build_steadystate(unitmolDomain)
+  if(wholeCellOnly!=0):
+    print "Solving molecular steady state..."
+    build_steadystate(unitmolDomain)
 
   ## Wholecell
-  build_timedep(wholecellDomain)
+  build_timedep(wholecellDomain,tag=tag)
+  wholecell.conc = parms.concInitial
 
 
   ## time parms 
@@ -256,24 +273,24 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
   tStep = parms.tStep
   t = 0.
   tMax = tStep * dt
-  
+
 
   ## iterate
   while (t < tMax):
 
     ## TODO check that flux is correct
     # assume simple flux between compartments
-    field.CalcConc(wholecellDomain)
-    if(debug==0):
+    # CHeck validation routine if adding this back in (cellOnly case will fail here) 
+    if(wholeCellOnly!=0):
       field.CalcConc(unitmolDomain)
     else:
-      unitmol.conc=0.2
+      unitmol.conc=0.001
 
     # TODO - flux between unitmol and wholecell domain (where is the surface here, since this
     # concept seems tobe relevant only for unit cell??) 
     # NOTE: I'm not so sure I need to have a flux between molecular domain and cellular domain, since
     # we assume that molecular domain is at steady state and Dirichlet on boundary is equal to cellular conc
-    k = 0.001
+    k = 100
     hack = 0.5
     jcell = k*(wholecell.conc - hack*unitmol.conc)
     print "wholecell: %f" % wholecell.conc
@@ -281,8 +298,15 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
     jmol  = -jcell
 
     # TODO add scale factors (are these consistent)
-    jcell*= unitcell.surfaceArea/ unitcell.gamma
-    jmol *= unitmol.surfaceArea/ unitmol.gamma
+    if(wholeCellOnly!=0):
+      jcell*= unitcell.surfaceArea/ unitcell.gamma
+      jmol *= unitmol.surfaceArea/ unitmol.gamma
+
+    # some other flux
+    flux = 100 * np.exp(-t/10)
+    jcell += flux
+
+
     print "jcell %f" % jcell
     
     # solve cell
@@ -361,7 +385,10 @@ def SolveHomogSystem(debug=0,\
 # use effective diffusion constant from molecular domain 
   useMoldeff=1,\
   smolMode = "false",\
-  molGamer=1): # is molecule from Gamer?
+# is molecule from Gamer?
+  molGamer=1,\
+  tag=""):   # optional tag for file naming 
+   
 
   ## Setup
   #root = "/home/huskeypm/scratch/homog/mol/"
@@ -374,10 +401,14 @@ def SolveHomogSystem(debug=0,\
     meshFileOuter = root+cellPrefix+"_mesh.xml.gz"
     subdomainFileOuter = root+cellPrefix+"_subdomains.xml.gz"
     cellDomUnit = CellularUnitDomain(meshFileOuter,subdomainFileOuter,\
-      type="field")
+      type="field",outpath=outbase,name=tag+cellPrefix)
     cellDomUnit.Setup()
     cellDomUnit.AssignBC()
     results.cellDomUnit = cellDomUnit
+  else:
+    cellDomUnit = empty()
+    cellDomUnit.problem = empty()
+
 
   # molecular domain
   if(molPrefix!="none"): 
@@ -385,11 +416,15 @@ def SolveHomogSystem(debug=0,\
     subdomainFileInner = root+molPrefix+"_subdomains.xml.gz"
     potentialFileInner = root+molPrefix+"_values.xml.gz"
     molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,\
-      filePotential = potentialFileInner,type="field",gamer=molGamer)
+      filePotential = potentialFileInner,type="field",gamer=molGamer,\
+      outpath=outbase,name=tag+molPrefix)
     molDomUnit.problem.smolMode = smolMode
     molDomUnit.Setup()
     molDomUnit.AssignBC()
     results.molDomUnit = molDomUnit
+  else:
+    molDomUnit = empty()
+    molDomUnit.problem = empty()
 
 
   # get fractional volume 
@@ -402,11 +437,17 @@ def SolveHomogSystem(debug=0,\
   if(cellPrefix!="none"): 
     print "Solving cellular unit cell using %s" % meshFileOuter
     solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
+  else:
+    print "WARNING: Using stored d_eff for cell" 
+    cellDomUnit.problem.d_eff = np.array([1,1,1])
 
   if(molPrefix!="none"): 
     print "Solving molecular unit cell using %s"% meshFileInner
     molDomUnit.smolMode = smolMode
     solve_homogeneous_unit(molDomUnit,type="field",debug=debug,smolMode=smolMode)
+  else:
+    print "WARNING: Using stored d_eff for mol"   
+    molDomUnit.problem.d_eff = np.array([1,1,1])
 
      
 
@@ -427,23 +468,23 @@ def SolveHomogSystem(debug=0,\
   
   
     # assign diff const 
-    cellDomWhole.problem.d_eff = cellDomUnit.problem.d_eff
-    
     if(useMoldeff==1):
       print "WARNING: For now will assume cellular diffusion dominated by molec dom"
       cellDomWhole.problem.d_eff = molDomUnit.problem.d_eff
+    else:
+      cellDomWhole.problem.d_eff = cellDomUnit.problem.d_eff
   
     # solve 
     if(debug==0):
       print "Solving macro equations using %s"% (meshFileCellular)
-      solve_homogenized_whole(cellDomWhole,cellDomUnit,molDomUnit,debug=debug)
+      solve_homogenized_whole(cellDomWhole,cellDomUnit,molDomUnit,tag=tag,debug=debug)
 
 
   ## return 
   return results
 
-# Validation case for simple charged sphere 
-def Validation():
+# ValidationSphere case for simple charged sphere 
+def ValidationSphere():
   root = "/home/huskeypm/scratch/validation/sphere/"
   molPrefix = "sphere"
   #molDomUnit.problem.mesh.coordinates()[:]*0.5005 
@@ -489,19 +530,113 @@ def Validation():
   print "Deff (Electro) ", nd_eff_electro
 
 
+# Paper validation, fig gen
+def ValidationPaper(mode="all"):
+  allsummary=[]
+
+  if(mode == "lattice" or mode == "all"):
+    #python ~/localTemp/srcs/homogenization/homog.py -case custom  -molPrefix 1p50 -molGamer
+    molPrefix = "1p50"
+    molGamer = 1
+    results = SolveHomogSystem(debug=debug,\
+      root="/home/huskeypm/scratch/120816/",\
+      cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
+      smolMode = "false",\
+      molGamer=molGamer,
+      tag=mode)
+
+    r=results.molDomUnit.problem.d_eff    
+    r = r/np.linalg.norm(r)
+    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
+    allsummary.append(summary)
+
+  if(mode=="troponinNoChg" or mode =="all"):
+    molPrefix = "troponin"
+    results = SolveHomogSystem(debug=debug,\
+      root="/home/huskeypm/scratch/homog/mol/",\
+      cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
+      smolMode = "false",
+      molGamer=0,\
+      tag=mode)
+
+    r=results.molDomUnit.problem.d_eff    
+    r = r/np.linalg.norm(r)
+    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
+    allsummary.append(summary)
+
+  if(mode=="troponinWChg" or mode =="all"):
+    molPrefix = "troponin"
+    results = SolveHomogSystem(debug=debug,\
+      root="/home/huskeypm/scratch/homog/mol/",\
+      cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
+      smolMode = "true",
+      molGamer=0,\
+      tag=mode)
+
+    r=results.molDomUnit.problem.d_eff    
+    r = r/np.linalg.norm(r)
+    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
+    allsummary.append(summary)
+
+  if(mode=="cellOnly"):
+    #parms.tStep = 2
+    wholeCellPrefix="multi_clustered"
+    results = SolveHomogSystem(debug=debug,\
+      root="/home/huskeypm/scratch/homog/mol/",\
+      cellPrefix="none", molPrefix="none",wholeCellPrefix=wholeCellPrefix,\
+      smolMode = "false",
+      molGamer=0,\
+      tag=mode)
+
+      # no need to print diff 
+
+  if(mode=="totalNoChg" or mode=="all"): 
+    #parms.tStep = 2
+    cellPrefix="cell"
+    wholeCellPrefix="multi_clustered"
+    molPrefix = "troponin"
+    results = SolveHomogSystem(debug=debug,\
+      root="/home/huskeypm/scratch/homog/mol/",\
+      cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
+      smolMode = "false",
+      molGamer=0,\
+      tag=mode)
+
+    r=results.molDomUnit.problem.d_eff    
+    r = r/np.linalg.norm(r)
+    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
+    allsummary.append(summary)
+
+  if(mode=="totalWChg" or mode =="all"):
+    cellPrefix="cell"
+    wholeCellPrefix="multi_clustered"
+    molPrefix = "troponin"
+    results = SolveHomogSystem(debug=debug,\
+      root="/home/huskeypm/scratch/homog/mol/",\
+      cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
+      smolMode = "true",
+      molGamer=0,\
+      tag=mode)
+
+    r=results.molDomUnit.problem.d_eff    
+    r = r/np.linalg.norm(r)
+    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
+    allsummary.append(summary)
+
+
+  print allsummary
+
+
+
+
+
+  
+
+
 ##
 ## MAIN
 ##
 
-# rocce
-cellPrefix="none"
-wholeCellPrefix="none"
-molPrefix="none"
-root = "/home/huskeypm/scratch/homog/"
-
-# vm
-#root = "/home/huskeypm/localTemp/"
- 
 
 
 if __name__ == "__main__":
@@ -510,8 +645,8 @@ if __name__ == "__main__":
   run homogenized problem 
  
 Usage:
-  homog.py -case myofilament/globular/validation/custom <-smol> <-molGamer>
-           -molPrefix molPrefix
+  homog.py -case myofilament/globular/validationSphere/custom <-smol> <-molGamer>
+           <-molPrefix molPrefix> <-validation all/etc>
 
   where 
     -smol - run molecular domain with electrostatics
@@ -519,9 +654,6 @@ Usage:
 
 Notes:
 """
-  remap = "none"
-  case ="none"
-  molGamer = 0 
 
   #GoelEx2p7()
 
@@ -529,9 +661,7 @@ Notes:
   if len(sys.argv) < 2:
       raise RuntimeError(msg)
   
-  outdir = outbase+'/'+sys.argv[1]+'/'
-  outdir = "./"
-  print "Writing outputs to %s" % outdir
+  print "Writing outputs to %s" % outbase
   #print "WARNING: files arent writing!"
 
   for i,arg in enumerate(sys.argv):
@@ -548,6 +678,23 @@ Notes:
     if(arg=="-molGamer"):
       molGamer = 1
 
+    if(arg=="-validation"):
+      validationMode=sys.argv[i+1]
+
+
+  #
+  # Validation 
+  #  
+  if(validationMode!=0):          
+    ValidationPaper(mode=validationMode)
+    quit()
+
+
+  #
+  # Normal 
+  #  
+
+
   #Debug2()
   #quit()
 
@@ -563,7 +710,6 @@ Notes:
 
 
   # globular case
-  debug=1
   if(case=="globular"):
     cellPrefix="mol/cell"
     wholeCellPrefix="mol/multi_clustered"
@@ -583,8 +729,9 @@ Notes:
       cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
       molGamer=molGamer)
 
-  elif(case=="validation"):
-    Validation()
+
+  elif(case=="validationSphere"):
+    ValidationSphere()
 
   elif(case=="custom"):
     root = "./"

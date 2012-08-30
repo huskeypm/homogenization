@@ -29,10 +29,6 @@ class CellularDomain(Domain):
     # geom
     self.CalcGeom(problem)
 
-
-
-
-
   # bcs
   def AssignBC(self):
     problem = self.problem

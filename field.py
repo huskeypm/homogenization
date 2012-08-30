@@ -129,7 +129,7 @@ def solveHomog(domain,smolMode="false"):
   #File(problem.name+"_unit.pvd") << problem.up
 
   # save unprojected soln instead 
-  fileName = problem.name+"_unit.pvd"
+  fileName = problem.outpath + problem.name+"_unit.pvd"
   print "Writing ",fileName
   #File(fileName) <<  problem.x   
   File(fileName) <<  problem.up

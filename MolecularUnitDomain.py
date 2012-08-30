@@ -20,7 +20,9 @@ class MolecularUnitDomain(Domain):
     # scalar (wrong) or field
     type="field",\
     # doe mesh come from gamer?
-    gamer=1\
+    gamer=1,\
+    outpath="./",\
+    name = "Molecular",\
     ):
     super(MolecularUnitDomain,self).__init__(type)
 
@@ -31,7 +33,8 @@ class MolecularUnitDomain(Domain):
     problem.init = 1
     #print "Enforcing gamer==1"
     self.gamer = gamer
-    problem.name = "Molecular"
+    problem.name = name
+    problem.outpath = outpath
     self.markerOuterBoundary = markerOuterBoundary
 
     if(problem.filePotential!="none"):
