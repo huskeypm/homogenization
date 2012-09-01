@@ -1,1 +1,0 @@
-ls v*bash | perl -ane 'chomp$_; printf("qsub $_\n");'
