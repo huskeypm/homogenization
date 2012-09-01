@@ -410,6 +410,7 @@ def SolveHomogSystem(debug=0,\
     cellDomUnit.problem = empty()
 
 
+  print "here"
   # molecular domain
   if(molPrefix!="none"): 
     meshFileInner = root+molPrefix+"_mesh.xml.gz"
@@ -536,7 +537,8 @@ def ValidationPaper(mode="all"):
 
   if(mode == "lattice" or mode == "all"):
     #python ~/localTemp/srcs/homogenization/homog.py -case custom  -molPrefix 1p50 -molGamer
-    molPrefix = "1p50"
+    #molPrefix = "1p50"
+    molPrefix = "test"
     molGamer = 1
     results = SolveHomogSystem(debug=debug,\
       root="/home/huskeypm/scratch/120816/",\

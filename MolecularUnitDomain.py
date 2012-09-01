@@ -12,6 +12,27 @@ q = 2.0 # charge Ca2+
 
 EPS = 1.e-10
 
+class TestRL(SubDomain):
+  def inside(self, x, on_boundary):
+    cond = (np.abs(x[0]- -1) < EPS or np.abs(x[0]-1) < EPS)
+    #if(on_boundary):
+    #  print "x",x[0],cond
+    return (on_boundary and cond)
+
+class TestTB(SubDomain):
+  def inside(self, x, on_boundary):
+    cond = (np.abs(x[1]- -1) < EPS or np.abs(x[1]-1) < EPS)
+    #if(on_boundary):
+    #  print "y",x[1],cond
+    return (on_boundary and cond)
+
+class TestBF(SubDomain):
+  def inside(self, x, on_boundary):
+    cond = (np.abs(x[2]- -1) < EPS or np.abs(x[2]-1) < EPS)
+    #if(on_boundary):
+    #  print "z",x[2],cond
+    return (on_boundary and cond)
+
 
 #
 # filePotential - electrostatic potential from APBS, interpolated to FE mesh
@@ -107,28 +128,41 @@ class MolecularUnitDomain(Domain):
       u1 = uBoundary
 
   # Create Dirichlet boundary condition
+
     bcs = []
-    #PKHfixed_center = DirichletBC(problem.V, Constant((0,0,0)), CenterDomain(), "pointwise")
     centerDomain = self.CenterDomain()
     centerDomain.problem = self.problem
     fixed_center = DirichletBC(problem.V, Constant((0,0,0)), centerDomain, "pointwise")
-    bcs.append(fixed_center)
+    #bcs.append(fixed_center)
   
-    #PKHbc1 = PeriodicBC(problem.V.sub(0), LeftRightBoundary())
     leftRightBoundary=self.LeftRightBoundary()
     leftRightBoundary.problem = self.problem
-    bc1 = PeriodicBC(problem.V.sub(0), leftRightBoundary)
+    #PKH 120901 bc1 = PeriodicBC(problem.V.sub(0), leftRightBoundary)
+    tc1 = DirichletBC(problem.V.sub(0), Constant(1.),TestRL())
+    bc1 = DirichletBC(problem.V.sub(0), Constant(0.),TestRL())
     bcs.append(bc1)
-    #PKHbc2 = PeriodicBC(problem.V.sub(1), BackFrontDomain())
+
     backFrontDomain=self.BackFrontDomain()
     backFrontDomain.problem = self.problem
-    bc2 = PeriodicBC(problem.V.sub(1), backFrontDomain)
+    #PKH 120901 bc2 = PeriodicBC(problem.V.sub(1), backFrontDomain)
+    tc2 = DirichletBC(problem.V.sub(1), Constant(1.),TestBF())
+    bc2 = DirichletBC(problem.V.sub(1), Constant(0.),TestBF())
     bcs.append(bc2)
-    #PKHbc3 = PeriodicBC(problem.V.sub(2), TopBottomDomain())
+
     topBottomDomain=self.TopBottomDomain()
     topBottomDomain.problem = self.problem
-    bc3 = PeriodicBC(problem.V.sub(2), topBottomDomain)
+    #PKH 120901 bc3 = PeriodicBC(problem.V.sub(2), topBottomDomain)
+    tc3 = DirichletBC(problem.V.sub(2), Constant(1.),TestTB())
+    bc3 = DirichletBC(problem.V.sub(2), Constant(0.),TestTB())
     bcs.append(bc3)
+
+    testBC=1
+    if(testBC==1):
+      z = Function(problem.V)
+      tc1.apply(z.vector())
+      tc2.apply(z.vector())
+      tc3.apply(z.vector())
+      File("test.pvd") << z
     
     problem.bcs = bcs
   
