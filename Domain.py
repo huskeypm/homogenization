@@ -1,13 +1,32 @@
 from dolfin import *
+import numpy as np
 class empty:pass
 
 EPS = 1.e-10
+# make pretty lax
+EPS = 1.e-1  
 
 class Domain(object):
   #
   # CLASSES
   #
   class LeftRightBoundary(SubDomain):
+          def inside(self, x, on_boundary):
+              problem = self.problem 
+              return ( np.abs(x[0]-problem.boundsMin[0]) < EPS or np.abs(x[0]-problem.boundsMax[0]) < EPS)
+
+      
+  class BackFrontDomain(SubDomain):
+          def inside(self, x, on_boundary):
+              problem = self.problem 
+              return ( np.abs(x[1]-problem.boundsMin[1]) < EPS or np.abs(x[1]-problem.boundsMax[1]) < EPS)
+      
+  class TopBottomDomain(SubDomain):
+          def inside(self, x, on_boundary):
+              problem = self.problem 
+              return ( np.abs(x[2]-problem.boundsMin[2]) < EPS or np.abs(x[2]-problem.boundsMax[2]) < EPS)
+      
+  class PeriodicLeftRightBoundary(SubDomain):
           def inside(self, x, on_boundary):
               # find v1x
               problem = self.problem 
@@ -19,7 +38,7 @@ class Domain(object):
               problem = self.problem 
               y[:] = problem.vert_mapx.get(tuple(x), x)
       
-  class BackFrontDomain(SubDomain):
+  class PeriodicBackFrontDomain(SubDomain):
           def inside(self, x, on_boundary):
               # find v1x
               problem = self.problem 
@@ -32,7 +51,7 @@ class Domain(object):
               y[:] = problem.vert_mapy.get(tuple(x), x)
       
       
-  class TopBottomDomain(SubDomain):
+  class PeriodicTopBottomDomain(SubDomain):
           def inside(self, x, on_boundary):
               # find v1x
               problem = self.problem 
@@ -92,18 +111,18 @@ class Domain(object):
     fixed_center = DirichletBC(problem.V, Constant((0,0,0)), centerDomain, "pointwise")
     bcs.append(fixed_center)
 
-    #PKHbc1 = PeriodicBC(problem.V.sub(0), LeftRightBoundary())
-    leftRightBoundary=self.LeftRightBoundary()
+    #PKHbc1 = PeriodicBC(problem.V.sub(0), PeriodicLeftRightBoundary())
+    leftRightBoundary=self.PeriodicLeftRightBoundary()
     leftRightBoundary.problem = self.problem
     bc1 = PeriodicBC(problem.V.sub(0), leftRightBoundary)
     bcs.append(bc1)
-    #PKHbc2 = PeriodicBC(problem.V.sub(1), BackFrontDomain())
-    backFrontDomain=self.BackFrontDomain()
+    #PKHbc2 = PeriodicBC(problem.V.sub(1), PeriodicBackFrontDomain())
+    backFrontDomain=self.PeriodicBackFrontDomain()
     backFrontDomain.problem = self.problem
     bc2 = PeriodicBC(problem.V.sub(1), backFrontDomain)
     bcs.append(bc2)
-    #PKHbc3 = PeriodicBC(problem.V.sub(2), TopBottomDomain())
-    topBottomDomain=self.TopBottomDomain()
+    #PKHbc3 = PeriodicBC(problem.V.sub(2), PeriodicTopBottomDomain())
+    topBottomDomain=self.PeriodicTopBottomDomain()
     topBottomDomain.problem = self.problem
     bc3 = PeriodicBC(problem.V.sub(2), topBottomDomain)
     bcs.append(bc3)

@@ -15,47 +15,50 @@ class util:
     coords = mesh.coordinates()
     prob.nDims = (np.shape(coords))[1]
   
-    boundMin=np.zeros(prob.nDims)
-    boundMax=np.zeros(prob.nDims)
+    boundsMin=np.zeros(prob.nDims)
+    boundsMax=np.zeros(prob.nDims)
     boundIdxMin=np.zeros(prob.nDims,"int")
     boundIdxMax=np.zeros(prob.nDims,"int")
   
-    boundMin[0] = coords[:,0].min()
+    boundsMin[0] = coords[:,0].min()
     boundIdxMin[0] = coords[:,0].argmin()
-    boundMax[0] = coords[:,0].max()
+    boundsMax[0] = coords[:,0].max()
     boundIdxMax[0] = coords[:,0].argmax()
     
-    boundMin[1] = coords[:,1].min()
+    boundsMin[1] = coords[:,1].min()
     boundIdxMin[1] = coords[:,1].argmin()
-    boundMax[1] = coords[:,1].max()
+    boundsMax[1] = coords[:,1].max()
     boundIdxMax[1] = coords[:,1].argmax()
     
-    boundMin[2] = coords[:,2].min()
+    boundsMin[2] = coords[:,2].min()
     boundIdxMin[2] = coords[:,2].argmin()
-    boundMax[2] = coords[:,2].max()
+    boundsMax[2] = coords[:,2].max()
     boundIdxMax[2] = coords[:,2].argmax()
+
+    prob.boundsMin = boundsMin
+    prob.boundsMax = boundsMax
   
-    return (boundMin,boundIdxMin,boundMax,boundIdxMax)
+    return (boundsMin,boundIdxMin,boundsMax,boundIdxMax)
   
   def CalcMidpoint(self,mesh):
-    (boundMin,boundIdxMin,boundMax,boundIdxMax) = self.CalcBounds(mesh)
-    return (boundMin + boundMax)/2.
+    (boundsMin,boundIdxMin,boundsMax,boundIdxMax) = self.CalcBounds(mesh)
+    return (boundsMin + boundsMax)/2.
   
   def CalcRanges(self,mesh):
-    (boundMin,boundIdxMin,boundMax,boundIdxMax) = self.CalcBounds(mesh)
+    (boundsMin,boundIdxMin,boundsMax,boundIdxMax) = self.CalcBounds(mesh)
     prob = self.prob
   
    
     ranges = np.zeros(prob.nDims)
-    ranges[0] = boundMax[0]-boundMin[0]
-    ranges[1] = boundMax[1]-boundMin[1]
-    ranges[2] = boundMax[2]-boundMin[2]
+    ranges[0] = boundsMax[0]-boundsMin[0]
+    ranges[1] = boundsMax[1]-boundsMin[1]
+    ranges[2] = boundsMax[2]-boundsMin[2]
   
     return ranges
   
   def CenterMesh(self,mesh):
   
-    (boundMin,boundIdxMin,boundMax,boundIdxMax) = self.CalcBounds(mesh)
+    (boundsMin,boundIdxMin,boundsMax,boundIdxMax) = self.CalcBounds(mesh)
     mp = self.CalcMidpoint(mesh)
     #print CalcMidpoint(mesh)
 
@@ -68,7 +71,7 @@ class util:
   def DefinePBCMappings(self):
     prob = self.prob 
     mesh = prob.mesh
-    (boundMin,boundIdxMin,boundMax,boundIdxMax) = self.CalcBounds(mesh)
+    (boundsMin,boundIdxMin,boundsMax,boundIdxMax) = self.CalcBounds(mesh)
 
     # x component 
     #v0x= np.array(([-1,0,0]))

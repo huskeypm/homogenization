@@ -34,28 +34,3 @@ class DefaultUnitDomain(Domain):
     self.CalcGeom(problem)
 
 
-
-
-  # Have option of passing in uBoundary 
-##  def AssignBC(self,uBoundary=0):
-##    problem = self.problem
-##
-##    #print "Probably don't have the right BCs yet"
-##    if(self.type=="scalar"):
-##        u1 = Constant(1.)
-##    elif(self.type=="field"):
-##        u1 = Constant((1.,1.,1.))
-##
-##    # use user-provided BC instead  
-##    if(uBoundary != 0):
-##      u1 = uBoundary
-##
-##    bc = DirichletBC(problem.V, u1, boundary)
-##    problem.bcs = [bc]
-##
-##    # Flux condition (just a placeholder for debugging)
-##    t = 0
-##    problem.dudn = Expression("0.5  * exp(-t/2.)",
-##      t=t)
-##
-##

@@ -62,6 +62,8 @@ class CellularUnitDomain(Domain):
         u0 = Constant((0.,0,0.))
         u1 = Constant((1.,1.,1.))
 
+    print "Need to remove periodic BC"
+    quit()
 
     bcs = []
     #PKHfixed_center = DirichletBC(problem.V, Constant((0,0,0)), CenterDomain(), "pointwise")
@@ -70,18 +72,18 @@ class CellularUnitDomain(Domain):
     fixed_center = DirichletBC(problem.V, Constant((0,0,0)), centerDomain, "pointwise")
     bcs.append(fixed_center)
 
-    #PKHbc1 = PeriodicBC(problem.V.sub(0), LeftRightBoundary())
-    leftRightBoundary=self.LeftRightBoundary()
+    #PKHbc1 = PeriodicBC(problem.V.sub(0), PeriodicLeftRightBoundary())
+    leftRightBoundary=self.PeriodicLeftRightBoundary()
     leftRightBoundary.problem = self.problem
     bc1 = PeriodicBC(problem.V.sub(0), leftRightBoundary)
     bcs.append(bc1)
-    #PKHbc2 = PeriodicBC(problem.V.sub(1), BackFrontDomain())
-    backFrontDomain=self.BackFrontDomain()
+    #PKHbc2 = PeriodicBC(problem.V.sub(1), PeriodicBackFrontDomain())
+    backFrontDomain=self.PeriodicBackFrontDomain()
     backFrontDomain.problem = self.problem
     bc2 = PeriodicBC(problem.V.sub(1), backFrontDomain)
     bcs.append(bc2)
-    #PKHbc3 = PeriodicBC(problem.V.sub(2), TopBottomDomain())
-    topBottomDomain=self.TopBottomDomain()
+    #PKHbc3 = PeriodicBC(problem.V.sub(2), PeriodicTopBottomDomain())
+    topBottomDomain=self.PeriodicTopBottomDomain()
     topBottomDomain.problem = self.problem
     bc3 = PeriodicBC(problem.V.sub(2), topBottomDomain)
     bcs.append(bc3)

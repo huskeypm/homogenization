@@ -135,25 +135,28 @@ class MolecularUnitDomain(Domain):
     fixed_center = DirichletBC(problem.V, Constant((0,0,0)), centerDomain, "pointwise")
     #bcs.append(fixed_center)
   
+    #PKH 120901 leftRightBoundary=self.PeriodicLeftRightBoundary()
     leftRightBoundary=self.LeftRightBoundary()
     leftRightBoundary.problem = self.problem
     #PKH 120901 bc1 = PeriodicBC(problem.V.sub(0), leftRightBoundary)
-    tc1 = DirichletBC(problem.V.sub(0), Constant(1.),TestRL())
-    bc1 = DirichletBC(problem.V.sub(0), Constant(0.),TestRL())
+    tc1 = DirichletBC(problem.V.sub(0), Constant(1.),leftRightBoundary)
+    bc1 = DirichletBC(problem.V.sub(0), Constant(0.),leftRightBoundary)
     bcs.append(bc1)
 
+    #PKH 120901 backFrontDomain=self.PeriodicBackFrontDomain()
     backFrontDomain=self.BackFrontDomain()
     backFrontDomain.problem = self.problem
     #PKH 120901 bc2 = PeriodicBC(problem.V.sub(1), backFrontDomain)
-    tc2 = DirichletBC(problem.V.sub(1), Constant(1.),TestBF())
-    bc2 = DirichletBC(problem.V.sub(1), Constant(0.),TestBF())
+    tc2 = DirichletBC(problem.V.sub(1), Constant(1.),backFrontDomain)
+    bc2 = DirichletBC(problem.V.sub(1), Constant(0.),backFrontDomain)
     bcs.append(bc2)
 
+    #PKH 120901 topBottomDomain=self.PeriodicTopBottomDomain()
     topBottomDomain=self.TopBottomDomain()
     topBottomDomain.problem = self.problem
     #PKH 120901 bc3 = PeriodicBC(problem.V.sub(2), topBottomDomain)
-    tc3 = DirichletBC(problem.V.sub(2), Constant(1.),TestTB())
-    bc3 = DirichletBC(problem.V.sub(2), Constant(0.),TestTB())
+    tc3 = DirichletBC(problem.V.sub(2), Constant(1.),topBottomDomain)
+    bc3 = DirichletBC(problem.V.sub(2), Constant(0.),topBottomDomain)
     bcs.append(bc3)
 
     testBC=1

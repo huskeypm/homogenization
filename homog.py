@@ -410,7 +410,6 @@ def SolveHomogSystem(debug=0,\
     cellDomUnit.problem = empty()
 
 
-  print "here"
   # molecular domain
   if(molPrefix!="none"): 
     meshFileInner = root+molPrefix+"_mesh.xml.gz"
