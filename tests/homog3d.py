@@ -46,7 +46,10 @@ class ObsBoundary(SubDomain):
 
 
 
+# works 
 mesh = Mesh("3d.xml.gz") 
+#
+mesh = Mesh("/home/huskeypm/scratch/120816/test_mesh.xml.gz")
 
 for i in np.arange(3):
   boundsMin[i] = np.min(mesh.coordinates()[:,i])
