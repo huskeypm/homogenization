@@ -5,6 +5,7 @@ class empty:pass
 EPS = 1.e-10
 # make pretty lax
 EPS = 1.e-1  
+# extremely lax for Tn
 
 class Domain(object):
   #
@@ -13,18 +14,39 @@ class Domain(object):
   class LeftRightBoundary(SubDomain):
           def inside(self, x, on_boundary):
               problem = self.problem 
-              return ( np.abs(x[0]-problem.boundsMin[0]) < EPS or np.abs(x[0]-problem.boundsMax[0]) < EPS)
+              scale = problem.scale 
+              return ( on_boundary and \
+                       # ON EDGE 
+                       # (np.abs(x[0]-problem.boundsMin[0]) < EPS or np.abs(x[0]-problem.boundsMax[0]) < EPS)\
+                       # BEYOND EDGE
+                       (x[0] < (scale[0]*problem.boundsMin[0] + EPS) or x[0] > (scale[0]*problem.boundsMax[0]- EPS))\
+                     )
 
       
-  class BackFrontDomain(SubDomain):
+  class BackFrontBoundary(SubDomain):
           def inside(self, x, on_boundary):
               problem = self.problem 
-              return ( np.abs(x[1]-problem.boundsMin[1]) < EPS or np.abs(x[1]-problem.boundsMax[1]) < EPS)
+              scale = problem.scale 
+              return ( on_boundary and \
+                       # ON EDGE 
+                       # (np.abs(x[1]-problem.boundsMin[1]) < EPS or np.abs(x[1]-problem.boundsMax[1]) < EPS)\
+                       # BEYOND EDGE
+                       (x[1] < (scale[1]*problem.boundsMin[1] + EPS) or x[1] > (scale[1]*problem.boundsMax[1]- EPS))\
+                       )
       
-  class TopBottomDomain(SubDomain):
+  class TopBottomBoundary(SubDomain):
           def inside(self, x, on_boundary):
               problem = self.problem 
-              return ( np.abs(x[2]-problem.boundsMin[2]) < EPS or np.abs(x[2]-problem.boundsMax[2]) < EPS)
+              scale = problem.scale 
+              result = ( on_boundary and \
+                       # ON EDGE 
+                       # (np.abs(x[2]-problem.boundsMin[2]) < EPS or np.abs(x[2]-problem.boundsMax[2]) < EPS)\
+                       # BEYOND EDGE
+                       (x[2] < (scale[2]*problem.boundsMin[2] + EPS) or x[2] > (scale[2]*problem.boundsMax[2]- EPS))\
+                     )
+              #print "x[2]:%f %f:%f/%f" % (x[2],problem.boundsMin[2],problem.boundsMin[2],problem.boundsMax[2])
+              #print result
+              return result 
       
   class PeriodicLeftRightBoundary(SubDomain):
           def inside(self, x, on_boundary):
@@ -38,7 +60,7 @@ class Domain(object):
               problem = self.problem 
               y[:] = problem.vert_mapx.get(tuple(x), x)
       
-  class PeriodicBackFrontDomain(SubDomain):
+  class PeriodicBackFrontBoundary(SubDomain):
           def inside(self, x, on_boundary):
               # find v1x
               problem = self.problem 
@@ -51,7 +73,7 @@ class Domain(object):
               y[:] = problem.vert_mapy.get(tuple(x), x)
       
       
-  class PeriodicTopBottomDomain(SubDomain):
+  class PeriodicTopBottomBoundary(SubDomain):
           def inside(self, x, on_boundary):
               # find v1x
               problem = self.problem 
@@ -76,6 +98,7 @@ class Domain(object):
   # 
   def __init__(self,type):
     problem = empty()
+    problem.scale = np.array([1.0,1.0,1.0])  # can use values less than 1.0 to assign more vertices to boundary (see BCs) 
     problem.gamma = 1.
     problem.volUnitCell= 1.
     self.type = type
@@ -116,15 +139,15 @@ class Domain(object):
     leftRightBoundary.problem = self.problem
     bc1 = PeriodicBC(problem.V.sub(0), leftRightBoundary)
     bcs.append(bc1)
-    #PKHbc2 = PeriodicBC(problem.V.sub(1), PeriodicBackFrontDomain())
-    backFrontDomain=self.PeriodicBackFrontDomain()
-    backFrontDomain.problem = self.problem
-    bc2 = PeriodicBC(problem.V.sub(1), backFrontDomain)
+    #PKHbc2 = PeriodicBC(problem.V.sub(1), PeriodicBackFrontBoundary())
+    backFrontBoundary=self.PeriodicBackFrontBoundary()
+    backFrontBoundary.problem = self.problem
+    bc2 = PeriodicBC(problem.V.sub(1), backFrontBoundary)
     bcs.append(bc2)
-    #PKHbc3 = PeriodicBC(problem.V.sub(2), PeriodicTopBottomDomain())
-    topBottomDomain=self.PeriodicTopBottomDomain()
-    topBottomDomain.problem = self.problem
-    bc3 = PeriodicBC(problem.V.sub(2), topBottomDomain)
+    #PKHbc3 = PeriodicBC(problem.V.sub(2), PeriodicTopBottomBoundary())
+    topBottomBoundary=self.PeriodicTopBottomBoundary()
+    topBottomBoundary.problem = self.problem
+    bc3 = PeriodicBC(problem.V.sub(2), topBottomBoundary)
     bcs.append(bc3)
 
     problem.bcs = bcs

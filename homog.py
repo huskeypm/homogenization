@@ -56,9 +56,6 @@ class empty:pass
 def solve_homogeneous_unit(domain,type="field",debug=0,smolMode="false"):
   problem = domain.problem
 
-  print "OVERRIDING MY DEBUG"
-  debug =0 
-
   ## debug mode
   if(debug==1):
   #if(1):
@@ -388,6 +385,8 @@ def SolveHomogSystem(debug=0,\
   smolMode = "false",\
 # is molecule from Gamer?
   molGamer=1,\
+# for passing other options
+  option="",\
   tag=""):   # optional tag for file naming 
    
 
@@ -420,6 +419,12 @@ def SolveHomogSystem(debug=0,\
       filePotential = potentialFileInner,type="field",gamer=molGamer,\
       outpath=outbase,name=tag+molPrefix)
     molDomUnit.problem.smolMode = smolMode
+    # 
+    if(option=="troponin"):
+      molDomUnit.problem.scale = np.array([0.9*np.sqrt(2)/2.,0.9*np.sqrt(2)/2.,0.9])
+      print "WARNING: I AM USING A SCALE FACTOR HERE TO ASSIGN BOUNDARY "
+      print molDomUnit.problem.scale
+
     molDomUnit.Setup()
     molDomUnit.AssignBC()
     results.molDomUnit = molDomUnit
@@ -537,7 +542,7 @@ def ValidationLattice():
     molPrefix = "1p50"
     #molPrefix = "test"
     molPrefixes = ["0p50","0p75","1p01","1p25","1p50"]
-    molDists    = np.array([0.50,0.75,1.01,1.25,1.50])
+    molDists    = 2 - np.array([0.50,0.75,1.01,1.25,1.50])
     norms = np.zeros( len(molDists) )
 
     
@@ -583,7 +588,7 @@ def ValidationPaper(mode="all"):
       root="/home/huskeypm/scratch/homog/mol/",\
       cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
       smolMode = "false",
-      molGamer=0,\
+      molGamer=0,option="troponin",\
       tag=mode)
 
     r=results.molDomUnit.problem.d_eff    
@@ -597,7 +602,7 @@ def ValidationPaper(mode="all"):
       root="/home/huskeypm/scratch/homog/mol/",\
       cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
       smolMode = "true",
-      molGamer=0,\
+      molGamer=0,option="troponin",\
       tag=mode)
 
     r=results.molDomUnit.problem.d_eff    
@@ -626,7 +631,7 @@ def ValidationPaper(mode="all"):
       root="/home/huskeypm/scratch/homog/mol/",\
       cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
       smolMode = "false",
-      molGamer=0,\
+      molGamer=0,option="troponin",\
       tag=mode)
 
     r=results.molDomUnit.problem.d_eff    
@@ -642,7 +647,7 @@ def ValidationPaper(mode="all"):
       root="/home/huskeypm/scratch/homog/mol/",\
       cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
       smolMode = "true",
-      molGamer=0,\
+      molGamer=0,option="troponin",\
       tag=mode)
 
     r=results.molDomUnit.problem.d_eff    
@@ -739,9 +744,10 @@ Notes:
 
   # globular case
   if(case=="globular"):
-    cellPrefix="mol/cell"
-    wholeCellPrefix="mol/multi_clustered"
-    molPrefix="120529_homog/1CID"
+    #cellPrefix="mol/cell"
+    #wholeCellPrefix="mol/multi_clustered"
+    #molPrefix="120529_homog/1CID"
+    molPrefix = "mol/1CID"
     SolveHomogSystem(debug=debug,\
       root=root,\
       cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
@@ -755,7 +761,7 @@ Notes:
     SolveHomogSystem(debug=debug,\
       root=root,\
       cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
-      molGamer=molGamer)
+      molGamer=molGamer,option="troponin")
 
 
   elif(case=="validationSphere"):

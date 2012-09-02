@@ -77,15 +77,15 @@ class CellularUnitDomain(Domain):
     leftRightBoundary.problem = self.problem
     bc1 = PeriodicBC(problem.V.sub(0), leftRightBoundary)
     bcs.append(bc1)
-    #PKHbc2 = PeriodicBC(problem.V.sub(1), PeriodicBackFrontDomain())
-    backFrontDomain=self.PeriodicBackFrontDomain()
-    backFrontDomain.problem = self.problem
-    bc2 = PeriodicBC(problem.V.sub(1), backFrontDomain)
+    #PKHbc2 = PeriodicBC(problem.V.sub(1), PeriodicBackFrontBoundary())
+    backFrontBoundary=self.PeriodicBackFrontBoundary()
+    backFrontBoundary.problem = self.problem
+    bc2 = PeriodicBC(problem.V.sub(1), backFrontBoundary)
     bcs.append(bc2)
-    #PKHbc3 = PeriodicBC(problem.V.sub(2), PeriodicTopBottomDomain())
-    topBottomDomain=self.PeriodicTopBottomDomain()
-    topBottomDomain.problem = self.problem
-    bc3 = PeriodicBC(problem.V.sub(2), topBottomDomain)
+    #PKHbc3 = PeriodicBC(problem.V.sub(2), PeriodicTopBottomBoundary())
+    topBottomBoundary=self.PeriodicTopBottomBoundary()
+    topBottomBoundary.problem = self.problem
+    bc3 = PeriodicBC(problem.V.sub(2), topBottomBoundary)
     bcs.append(bc3)
 
     problem.bcs = bcs

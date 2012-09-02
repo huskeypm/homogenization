@@ -10,28 +10,26 @@ markerMolecularBoundary =4
 markerOuterBoundary=5
 q = 2.0 # charge Ca2+ 
 
-EPS = 1.e-10
-
-class TestRL(SubDomain):
-  def inside(self, x, on_boundary):
-    cond = (np.abs(x[0]- -1) < EPS or np.abs(x[0]-1) < EPS)
-    #if(on_boundary):
-    #  print "x",x[0],cond
-    return (on_boundary and cond)
-
-class TestTB(SubDomain):
-  def inside(self, x, on_boundary):
-    cond = (np.abs(x[1]- -1) < EPS or np.abs(x[1]-1) < EPS)
-    #if(on_boundary):
-    #  print "y",x[1],cond
-    return (on_boundary and cond)
-
-class TestBF(SubDomain):
-  def inside(self, x, on_boundary):
-    cond = (np.abs(x[2]- -1) < EPS or np.abs(x[2]-1) < EPS)
-    #if(on_boundary):
-    #  print "z",x[2],cond
-    return (on_boundary and cond)
+#class TestRL(SubDomain):
+#  def inside(self, x, on_boundary):
+#    cond = (np.abs(x[0]- -1) < EPS or np.abs(x[0]-1) < EPS)
+#    #if(on_boundary):
+#    #  print "x",x[0],cond
+#    return (on_boundary and cond)
+#
+#class TestTB(SubDomain):
+#  def inside(self, x, on_boundary):
+#    cond = (np.abs(x[1]- -1) < EPS or np.abs(x[1]-1) < EPS)
+#    #if(on_boundary):
+#    #  print "y",x[1],cond
+#    return (on_boundary and cond)
+#
+#class TestBF(SubDomain):
+#  def inside(self, x, on_boundary):
+#    cond = (np.abs(x[2]- -1) < EPS or np.abs(x[2]-1) < EPS)
+#    #if(on_boundary):
+#    #  print "z",x[2],cond
+#    return (on_boundary and cond)
 
 
 #
@@ -134,7 +132,7 @@ class MolecularUnitDomain(Domain):
     centerDomain.problem = self.problem
     fixed_center = DirichletBC(problem.V, Constant((0,0,0)), centerDomain, "pointwise")
     #bcs.append(fixed_center)
-  
+
     #PKH 120901 leftRightBoundary=self.PeriodicLeftRightBoundary()
     leftRightBoundary=self.LeftRightBoundary()
     leftRightBoundary.problem = self.problem
@@ -143,20 +141,20 @@ class MolecularUnitDomain(Domain):
     bc1 = DirichletBC(problem.V.sub(0), Constant(0.),leftRightBoundary)
     bcs.append(bc1)
 
-    #PKH 120901 backFrontDomain=self.PeriodicBackFrontDomain()
-    backFrontDomain=self.BackFrontDomain()
-    backFrontDomain.problem = self.problem
-    #PKH 120901 bc2 = PeriodicBC(problem.V.sub(1), backFrontDomain)
-    tc2 = DirichletBC(problem.V.sub(1), Constant(1.),backFrontDomain)
-    bc2 = DirichletBC(problem.V.sub(1), Constant(0.),backFrontDomain)
+    #PKH 120901 backFrontBoundary=self.PeriodicBackFrontBoundary()
+    backFrontBoundary=self.BackFrontBoundary()
+    backFrontBoundary.problem = self.problem
+    #PKH 120901 bc2 = PeriodicBC(problem.V.sub(1), backFrontBoundary)
+    tc2 = DirichletBC(problem.V.sub(1), Constant(1.),backFrontBoundary)
+    bc2 = DirichletBC(problem.V.sub(1), Constant(0.),backFrontBoundary)
     bcs.append(bc2)
 
-    #PKH 120901 topBottomDomain=self.PeriodicTopBottomDomain()
-    topBottomDomain=self.TopBottomDomain()
-    topBottomDomain.problem = self.problem
-    #PKH 120901 bc3 = PeriodicBC(problem.V.sub(2), topBottomDomain)
-    tc3 = DirichletBC(problem.V.sub(2), Constant(1.),topBottomDomain)
-    bc3 = DirichletBC(problem.V.sub(2), Constant(0.),topBottomDomain)
+    #PKH 120901 topBottomBoundary=self.PeriodicTopBottomBoundary()
+    topBottomBoundary=self.TopBottomBoundary()
+    topBottomBoundary.problem = self.problem
+    #PKH 120901 bc3 = PeriodicBC(problem.V.sub(2), topBottomBoundary)
+    tc3 = DirichletBC(problem.V.sub(2), Constant(1.),topBottomBoundary)
+    bc3 = DirichletBC(problem.V.sub(2), Constant(0.),topBottomBoundary)
     bcs.append(bc3)
 
     testBC=1
@@ -165,7 +163,7 @@ class MolecularUnitDomain(Domain):
       tc1.apply(z.vector())
       tc2.apply(z.vector())
       tc3.apply(z.vector())
-      File("test.pvd") << z
+      File("appliedBCs.pvd") << z
     
     problem.bcs = bcs
   
