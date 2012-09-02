@@ -16,6 +16,7 @@
 from dolfin import *
 import numpy as np
 from params import *
+import matplotlib.pyplot as plt
 
 # classes
 from CellularDomain import *
@@ -529,27 +530,52 @@ def ValidationSphere():
   print "Deff (No Electro) ", nd_eff_noelectro
   print "Deff (Electro) ", nd_eff_electro
 
+def ValidationLattice():
+    allsummary=[]
+    mode="valid"
+    #python ~/localTemp/srcs/homogenization/homog.py -case custom  -molPrefix 1p50 -molGamer
+    molPrefix = "1p50"
+    #molPrefix = "test"
+    molPrefixes = ["0p50","0p75","1p01","1p25","1p50"]
+    molDists    = np.array([0.50,0.75,1.01,1.25,1.50])
+    norms = np.zeros( len(molDists) )
+
+    
+    molGamer = 1
+    for i,molPrefix in enumerate(molPrefixes):
+      print "molPrefix"
+      results = SolveHomogSystem(debug=debug,\
+        root="./validation/",\
+        cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
+        smolMode = "false",\
+        molGamer=molGamer,
+        tag=mode)
+
+      norms[i]  = np.linalg.norm(results.molDomUnit.problem.d_eff)
+      r=results.molDomUnit.problem.d_eff    
+      r = r/np.linalg.norm(r)
+      summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
+      allsummary.append(summary)
+
+    # plot 
+    plt.figure()
+    plt.plot(molDists,norms)
+    plt.scatter(molDists,norms)
+    plt.ylabel("|D| [$m^2/s$]")
+    plt.xlabel("Edge length [m]")
+    plt.title("Diffusivity versus molecule size")
+    f=plt.gcf()
+    f.savefig("Boxes.png")
+
+    return (molDists,norms)
+
 
 # Paper validation, fig gen
 def ValidationPaper(mode="all"):
   allsummary=[]
 
   if(mode == "lattice" or mode == "all"):
-    #python ~/localTemp/srcs/homogenization/homog.py -case custom  -molPrefix 1p50 -molGamer
-    #molPrefix = "1p50"
-    molPrefix = "test"
-    molGamer = 1
-    results = SolveHomogSystem(debug=debug,\
-      root="/home/huskeypm/scratch/120816/",\
-      cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
-      smolMode = "false",\
-      molGamer=molGamer,
-      tag=mode)
-
-    r=results.molDomUnit.problem.d_eff    
-    r = r/np.linalg.norm(r)
-    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
-    allsummary.append(summary)
+    ValidationLattice()
 
   if(mode=="troponinNoChg" or mode =="all"):
     molPrefix = "troponin"
@@ -688,6 +714,7 @@ Notes:
   #  
   if(validationMode!=0):          
     ValidationPaper(mode=validationMode)
+    print "Run paraview.py to view results"
     quit()
 
 
