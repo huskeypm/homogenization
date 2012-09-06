@@ -719,7 +719,7 @@ Notes:
   #  
   if(validationMode!=0):          
     ValidationPaper(mode=validationMode)
-    print "Run paraview.py to view results"
+    print "Run paraview.py to view results (on mac/home computer)"
     quit()
 
 
