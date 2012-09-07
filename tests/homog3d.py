@@ -111,11 +111,17 @@ File("3d.pvd") << x
 dim = mesh.ufl_cell().geometric_dimension()
 omegas = np.zeros(dim)
 for i in range(dim):
-  grad_Xi_component = inner(grad(x[i]),Constant((1,0,0)))
+  v = [0,0,0]
+  v[i] = 1
+  grad_Xi_component = inner(grad(x[i]),Constant((v[0],v[1],v[2]))) + Constant(1)
+  outname = "diff%d.pvd" % i
+  Vscalar = FunctionSpace(mesh,"CG",1)
+  File(outname)<<project(grad_Xi_component,V=Vscalar)
+
   if(gamer==1):
-    form = (grad_Xi_component + Constant(1)) * dx(1)
+    form = grad_Xi_component * dx(1)
   else:
-    form = (grad_Xi_component + Constant(1)) * dx
+    form = grad_Xi_component * dx
   integrand = assemble(form)
   omegas[i] = integrand
 

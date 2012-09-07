@@ -80,8 +80,14 @@ File("2d.pvd") << x
 dim = 2 
 omegas = np.zeros(dim)
 for i in range(dim):
-  grad_Xi_component = inner(grad(x[i]),Constant((1,0)))
-  form = (grad_Xi_component + Constant(1)) * dx
+  v = [0,0]
+  v[i] = 1
+  grad_Xi_component = inner(grad(x[i]),Constant((v[0],v[1]))) + Constant(1)
+  outname = "diff%d.pvd" % i
+  Vscalar = FunctionSpace(mesh,"CG",1)
+  File(outname)<<project(grad_Xi_component,V=Vscalar)
+
+  form = grad_Xi_component * dx
   integrand = assemble(form)
   omegas[i] = integrand
 

@@ -154,12 +154,17 @@ def compute_eff_diff(domain):
     # Here  we suppose to be extracting the ith derivative of x[i]
     v = [0,0,0]
     v[i] = 1
-    grad_Xi_component = inner(grad(x[i]),Constant((v[0],v[1],v[2])))
+    grad_Xi_component = inner(grad(x[i]),Constant((v[0],v[1],v[2]))) + Constant(1)
+
+    # test 
+    outname = "diff%d.pvd" % i
+    Vscalar = FunctionSpace(mesh,"CG",1)
+    File(outname)<<project(grad_Xi_component,V=Vscalar)
 
     if (domain.gamer==0):
-      form = (grad_Xi_component + Constant(1)) * dx 
+      form = grad_Xi_component * dx 
     else:
-      form = (grad_Xi_component + Constant(1)) * dx(1)
+      form = grad_Xi_component * dx(1)
 
     integrand = assemble(form)
     omegas[i] = integrand

@@ -543,10 +543,13 @@ def ValidationLattice():
     #molPrefix = "test"
     molPrefixes = ["0p50","0p75","1p01","1p25","1p50"]
     molDists    = 2 - np.array([0.50,0.75,1.01,1.25,1.50])
-    norms = np.zeros( len(molDists) )
 
     
     molGamer = 1
+    allResults = empty()
+    allResults.norms = np.zeros( len(molDists) )
+    allResults.lambdax= np.zeros( len(molDists) )
+    allResults.Deff = np.zeros( [len(molDists),3] )
     for i,molPrefix in enumerate(molPrefixes):
       print "molPrefix"
       results = SolveHomogSystem(debug=debug,\
@@ -556,23 +559,35 @@ def ValidationLattice():
         molGamer=molGamer,
         tag=mode)
 
-      norms[i]  = np.linalg.norm(results.molDomUnit.problem.d_eff)
+      allResults.norms[i]  = np.linalg.norm(results.molDomUnit.problem.d_eff)
       r=results.molDomUnit.problem.d_eff    
+      allResults.Deff[i,:] = r[:]
+      allResults.lambdax[i] = 1 / np.sqrt(r[0]/parms.d)
       r = r/np.linalg.norm(r)
       summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
       allsummary.append(summary)
 
     # plot 
     plt.figure()
-    plt.plot(molDists,norms)
-    plt.scatter(molDists,norms)
+    plt.plot(molDists,allResults.norms,'k--')
+    plt.scatter(molDists,allResults.norms)
     plt.ylabel("|D| [$m^2/s$]")
     plt.xlabel("Edge length [m]")
     plt.title("Diffusivity versus molecule size")
     f=plt.gcf()
     f.savefig("Boxes.png")
 
-    return (molDists,norms)
+    plt.figure()
+    plt.plot(molDists,allResults.lambdax,'k-')
+    plt.scatter(molDists,allResults.lambdax)
+    plt.ylabel("$\lambda\; [m^2/s$]")
+    plt.xlabel("Edge length [m]")
+    plt.title("Diffusivity versus molecule size")
+    f=plt.gcf()
+    f.savefig("poopdogs.png")
+
+
+    return (molDists,allResults)
 
 
 # Paper validation, fig gen
@@ -769,11 +784,14 @@ Notes:
 
   elif(case=="custom"):
     root = "./"
-    SolveHomogSystem(debug=debug,\
+    results = SolveHomogSystem(debug=debug,\
       root=root,\
       cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
       smolMode = smolMode,
       molGamer=molGamer)
+    r=results.molDomUnit.problem.d_eff    
+    r = r/np.linalg.norm(r)
+    print r
 
   else:
     msg = "Case " + case + " not understood"   
