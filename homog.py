@@ -542,14 +542,19 @@ def ValidationLattice():
     molPrefix = "1p50"
     #molPrefix = "test"
     molPrefixes = ["0p50","0p75","1p01","1p25","1p50"]
-    molDists    = 2 - np.array([0.50,0.75,1.01,1.25,1.50])
+    cellEdge = 2.
+    interstitialEdges= np.array([0.50,0.75,1.01,1.25,1.50])
+    molEdges    = cellEdge - interstitialEdges
+    cellVol = cellEdge**3
+    interstitialVol = interstitialEdges**3
+    interstitialVolFrac = interstitialVol/cellVol 
 
     
     molGamer = 1
     allResults = empty()
-    allResults.norms = np.zeros( len(molDists) )
-    allResults.lambdax= np.zeros( len(molDists) )
-    allResults.Deff = np.zeros( [len(molDists),3] )
+    allResults.norms = np.zeros( len(molEdges) )
+    allResults.lambdax= np.zeros( len(molEdges) )
+    allResults.Deff = np.zeros( [len(molEdges),3] )
     for i,molPrefix in enumerate(molPrefixes):
       print "molPrefix"
       results = SolveHomogSystem(debug=debug,\
@@ -569,25 +574,40 @@ def ValidationLattice():
 
     # plot 
     plt.figure()
-    plt.plot(molDists,allResults.norms,'k--')
-    plt.scatter(molDists,allResults.norms)
+    plt.plot(molEdges,allResults.norms,'k--')
+    plt.scatter(molEdges,allResults.norms)
     plt.ylabel("|D| [$m^2/s$]")
     plt.xlabel("Edge length [m]")
     plt.title("Diffusivity versus molecule size")
     f=plt.gcf()
     f.savefig("Boxes.png")
 
+    # plot 
     plt.figure()
-    plt.plot(molDists,allResults.lambdax,'k-')
-    plt.scatter(molDists,allResults.lambdax)
+    plt.plot(molEdges,allResults.lambdax,'k-')
+    plt.scatter(molEdges,allResults.lambdax)
     plt.ylabel("$\lambda\; [m^2/s$]")
     plt.xlabel("Edge length [m]")
     plt.title("Diffusivity versus molecule size")
     f=plt.gcf()
-    f.savefig("poopdogs.png")
+    f.savefig("Lambda.png")
+
+    #plt 
+    upperBound = 2 * interstitialVolFrac / (3-interstitialVolFrac)# per El-Kareh
+    plt.figure()
+    plt.plot(interstitialVolFrac,allResults.Deff[:,0]/parms.d,'r-')
+    plt.plot(interstitialVolFrac,allResults.Deff[:,1]/parms.d,'g-')
+    plt.plot(interstitialVolFrac,allResults.Deff[:,2]/parms.d,'b-')
+    plt.plot(interstitialVolFrac,upperBound,'k.-')
+    plt.ylabel("$D_{eff}/D]$")
+    plt.xlabel("$\phi$")
+    plt.title("Effective diffusion versus volume fraction")
+    plt.legend(["x","y","z","analy"])
+    f=plt.gcf()
+    f.savefig("diff_vs_volfrac.png")
 
 
-    return (molDists,allResults)
+    return (molEdges,allResults)
 
 
 # Paper validation, fig gen

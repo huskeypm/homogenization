@@ -141,7 +141,20 @@ def compute_eff_diff(domain):
   problem = domain.problem
   mesh = problem.mesh
   dim = mesh.ufl_cell().geometric_dimension()
-  
+
+
+  if(domain.gamer==1):
+    dx_int = dx(1)
+  else:
+    dx_int = dx
+
+
+  Vscalar = FunctionSpace(mesh,"CG",1)
+  us = TrialFunction(Vscalar)
+  vs = TestFunction(Vscalar)
+
+
+
   ## get omega
   # treating each component independtly, following Goel's example in sec 2.7 
   import numpy as np
@@ -152,25 +165,51 @@ def compute_eff_diff(domain):
   for i in range(dim):
     #form = (inner(grad(x[i]),Constant((1,0,0)))+Constant(1)) * dx # works 
     # Here  we suppose to be extracting the ith derivative of x[i]
-    v = [0,0,0]
-    v[i] = 1
-    grad_Xi_component = inner(grad(x[i]),Constant((v[0],v[1],v[2]))) + Constant(1)
+    #v = [0,0,0]
+    #v[i] = 1
+    #grad_Xi_component = inner(grad(x[i]),Constant((v[0],v[1],v[2]))) + Constant(1)
 
     # test 
+    #outname = "diff%d.pvd" % i
+    #File(outname)<<project(grad_Xi_component,V=Vscalar)
+
+    #if (domain.gamer==0):
+    #  form = grad_Xi_component * dx 
+    #else:
+    #  form = grad_Xi_component * dx(1)
+#
+#    integrand = assemble(form)
+#    omegas[i] = integrand
+
+    # JOHAN 
+    grad_Xi_component = x[i].dx(i)+Constant(1)
     outname = "diff%d.pvd" % i
-    Vscalar = FunctionSpace(mesh,"CG",1)
-    File(outname)<<project(grad_Xi_component,V=Vscalar)
 
-    if (domain.gamer==0):
-      form = grad_Xi_component * dx 
-    else:
-      form = grad_Xi_component * dx(1)
+    D_eff_project = Function(Vscalar)
+   
+    solve(us*vs*dx_int==grad_Xi_component*vs*dx_int, D_eff_project)
+    File(outname)<<D_eff_project
+  
+    form = grad_Xi_component * dx_int
+  
+    omegas[i] = assemble(form)
+  
+  vol = assemble( Constant(1)*dx_int, mesh=mesh )
+  
 
-    integrand = assemble(form)
-    omegas[i] = integrand
+  print "omegasO"
+  print omegas/vol
+  problem.omv = omegas/vol
+  problem.domv = parms.d*omegas/vol
+  problem.d_eff = problem.domv 
+  print "WARNING: circumventing use of volUnitCell etc for determining deff"
+  return problem.d_eff 
+  
   
   
   omegas /= problem.gamma
+  print "omegas"
+  print omegas
   d_eff = parms.d*omegas
   print "d: %f" % parms.d
   print "d_eff:"

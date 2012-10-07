@@ -46,16 +46,29 @@ class ObsBoundary(SubDomain):
 
 cheng=0
 auriault=1
-if(cheng==1):
+case ="shorten" # cheng, auriault
+if(case=="cheng"):
   print "CHENG geometry"
   meshFile = "2d.xml" # original from Cheng paper, I think 
   bounds[0,:] = np.array([0,7])
   bounds[0,:] = np.array([1,5])
-elif(auriault==1):
+elif(case=="auriault"):
   print "AURIAULT geometry"
   meshFile = "half_auriault.xml" # from Auriault paper
   bounds[0,:] = np.array([0,5])
   bounds[1,:] = np.array([999,999])
+elif(case=="shorten"):
+  print "SHORTEN geometry"
+  meshFile = "shorten.xml" # from Auriault paper
+  #bounds[0,:] = np.array([0,6])
+  #bounds[1,:] = np.array([0,3])    
+  mesh = Mesh(meshFile)     
+  #
+  for i in np.arange(3):
+    boundsMin[i] = np.min(mesh.coordinates()[:,i])
+    boundsMax[i] = np.max(mesh.coordinates()[:,i])
+
+
 
 mesh = Mesh(meshFile) 
 
@@ -78,16 +91,22 @@ if (test==1):
 V = VectorFunctionSpace(mesh,"CG",1)
 
 bcs = [] 
-if(cheng==1):
+if(case=="cheng"):
   ## e = [1,0]
   bcs.append(DirichletBC(V.sub(0),Constant(0),XBoundary()))
   # Neumann i believe is nalba w + delta = 0 on boundary, so natural
   ## e = [0,1]
   bcs.append(DirichletBC(V.sub(1),Constant(0),YBoundary()))
   # Neumann i believe is nalba w + delta = 0 on boundary, so natural
-elif(auriault==1):
+elif(case=="auriault"):
   # left/right periodic 
   bcs.append(DirichletBC(V.sub(0),Constant(0),XBoundary()))
+elif(case=="shorten"):
+  # left/right periodic 
+  bcs.append(DirichletBC(V.sub(0),Constant(0),XBoundary()))
+  # Neumann i believe is nalba w + delta = 0 on boundary, so natural
+  # top/bottom periodic 
+  bcs.append(DirichletBC(V.sub(1),Constant(0),YBoundary()))
 
 Dii  = Constant((1.0,1.0))
 Aij = diag(Dii) 
@@ -119,7 +138,7 @@ for i in range(dim):
   omegas[i] = integrand
 
 vol = assemble( Constant(1)*dx,mesh=mesh ) 
-print "D"
+print "D*"
 print omegas/vol
 
 
