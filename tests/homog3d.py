@@ -1,3 +1,7 @@
+#
+# Revisions
+# 121009 fixed dimension error in DefineBoundary
+#
 from dolfin import *
 import numpy as np
 
@@ -6,11 +10,16 @@ boundsMax = np.zeros(3)
 case="none"
 meshFile="none"
 dim=-1
+gamer = 0
 
 EPS = 0.001 
 def DefineBoundary(x,btype,on_boundary):
   if(not on_boundary):
     return 0 
+
+  # need this, since for some reason 'dim' is not global
+  dim = np.shape(x)[0]
+
 
   lr = ( np.abs(x[0]-boundsMin[0]) < EPS or np.abs(x[0]-boundsMax[0]) < EPS)
   tb = ( np.abs(x[1]-boundsMin[1]) < EPS or np.abs(x[1]-boundsMax[1]) < EPS)
@@ -56,7 +65,7 @@ class ObsBoundary(SubDomain):
 
 
 
-def doit(meshFile="none", case="none"):
+def doit(meshFile="none", case="none",gamer=0):
 # my meshes
 #case = "cheng"
 #case = "auriault"
@@ -95,9 +104,10 @@ def doit(meshFile="none", case="none"):
   
   else:
     mesh = Mesh(meshFile)     
-    gamer=0
+    #gamer=0
     #
     for i in np.arange( mesh.ufl_cell().geometric_dimension() ):
+      print "Marking direction %d" % i
       boundsMin[i] = np.min(mesh.coordinates()[:,i])
       boundsMax[i] = np.max(mesh.coordinates()[:,i])
   
@@ -247,10 +257,13 @@ Notes:
       case=sys.argv[i+1]
     if(arg=="-mesh"):
       meshFile=sys.argv[i+1]
+    if(arg=="-gamer"):
+      gamer = 1
 
 
 
 
 
 
-  doit(case=case,meshFile=meshFile) 
+
+  doit(case=case,meshFile=meshFile,gamer=gamer) 
