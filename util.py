@@ -1,3 +1,7 @@
+#
+# Revisions
+#   121009 generalized to 2d
+#
 from dolfin import *
 import numpy as np
 
@@ -30,10 +34,11 @@ class util:
     boundsMax[1] = coords[:,1].max()
     boundIdxMax[1] = coords[:,1].argmax()
     
-    boundsMin[2] = coords[:,2].min()
-    boundIdxMin[2] = coords[:,2].argmin()
-    boundsMax[2] = coords[:,2].max()
-    boundIdxMax[2] = coords[:,2].argmax()
+    if(prob.nDims==3):
+      boundsMin[2] = coords[:,2].min()
+      boundIdxMin[2] = coords[:,2].argmin()
+      boundsMax[2] = coords[:,2].max()
+      boundIdxMax[2] = coords[:,2].argmax()
 
     prob.boundsMin = boundsMin
     prob.boundsMax = boundsMax
@@ -90,19 +95,21 @@ class util:
     prob.targetsy = [tuple(v1y)]
     prob.vert_mapy = {}
     prob.vert_mapy[tuple(v0y)] = tuple(v1y)
+
+    print v0x, " maps to " , prob.vert_mapx[ tuple(v0x)  ]
+    print v0y, " maps to " , prob.vert_mapy[ tuple(v0y)  ]
     
     # z component 
     #v0z= np.array(([0,0,-1]))
     #v1z= np.array(([0,0,1]))
-    v0z = mesh.coordinates()[boundIdxMin[2],:]
-    v1z = mesh.coordinates()[boundIdxMax[2],:]
-    prob.targetsz= [tuple(v1z)]
-    prob.vert_mapz = {}
-    prob.vert_mapz[tuple(v0z)] = tuple(v1z)
+    if(prob.nDims==3):
+      v0z = mesh.coordinates()[boundIdxMin[2],:]
+      v1z = mesh.coordinates()[boundIdxMax[2],:]
+      prob.targetsz= [tuple(v1z)]
+      prob.vert_mapz = {}
+      prob.vert_mapz[tuple(v0z)] = tuple(v1z)
+      print v0z, " maps to " , prob.vert_mapz[ tuple(v0z)  ]
   
-    print v0x, " maps to " , prob.vert_mapx[ tuple(v0x)  ]
-    print v0y, " maps to " , prob.vert_mapy[ tuple(v0y)  ]
-    print v0z, " maps to " , prob.vert_mapz[ tuple(v0z)  ]
 
   def GeometryInitializations(self):
     prob = self.prob 

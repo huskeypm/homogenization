@@ -108,6 +108,7 @@ class MolecularUnitDomain(Domain):
   # bcs
   def AssignBC(self,uBoundary=0):
     problem = self.problem
+    nDim = np.shape(problem.mesh.coordinates())[1]
 
     #print "Probably don't have the right BCs yet"
     # TODO: might need to handle BC at active site as a mixed boundary
@@ -118,8 +119,10 @@ class MolecularUnitDomain(Domain):
         u0 = Constant(0.)
         u1 = Constant(1.)
     elif(self.type=="field"):
-        u0 = Constant((0.,0,0.))
-        u1 = Constant((1.,1.,1.))
+        #u0 = Constant((0.,0,0.))
+        #u1 = Constant((1.,1.,1.))
+        u0 = Constant(np.zeros(nDim))
+        u1 = Constant(np.ones(nDim))
 
     # use user-provided BC instead  
     if(uBoundary != 0):
@@ -130,7 +133,8 @@ class MolecularUnitDomain(Domain):
     bcs = []
     centerDomain = self.CenterDomain()
     centerDomain.problem = self.problem
-    fixed_center = DirichletBC(problem.V, Constant((0,0,0)), centerDomain, "pointwise")
+    #PKHfixed_center = DirichletBC(problem.V, Constant((0,0,0)), centerDomain, "pointwise")
+    fixed_center = DirichletBC(problem.V, Constant(np.zeros(nDim)), centerDomain, "pointwise")
     #bcs.append(fixed_center)
 
     #PKH 120901 leftRightBoundary=self.PeriodicLeftRightBoundary()
@@ -150,19 +154,21 @@ class MolecularUnitDomain(Domain):
     bcs.append(bc2)
 
     #PKH 120901 topBottomBoundary=self.PeriodicTopBottomBoundary()
-    topBottomBoundary=self.TopBottomBoundary()
-    topBottomBoundary.problem = self.problem
-    #PKH 120901 bc3 = PeriodicBC(problem.V.sub(2), topBottomBoundary)
-    tc3 = DirichletBC(problem.V.sub(2), Constant(1.),topBottomBoundary)
-    bc3 = DirichletBC(problem.V.sub(2), Constant(0.),topBottomBoundary)
-    bcs.append(bc3)
+    if(nDim>2):
+      topBottomBoundary=self.TopBottomBoundary()
+      topBottomBoundary.problem = self.problem
+      #PKH 120901 bc3 = PeriodicBC(problem.V.sub(2), topBottomBoundary)
+      tc3 = DirichletBC(problem.V.sub(2), Constant(1.),topBottomBoundary)
+      bc3 = DirichletBC(problem.V.sub(2), Constant(0.),topBottomBoundary)
+      bcs.append(bc3)
 
     testBC=1
     if(testBC==1):
       z = Function(problem.V)
       tc1.apply(z.vector())
       tc2.apply(z.vector())
-      tc3.apply(z.vector())
+      if(nDim>2):
+        tc3.apply(z.vector())
       File("appliedBCs.pvd") << z
     
     problem.bcs = bcs

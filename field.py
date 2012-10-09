@@ -47,7 +47,8 @@ def solveHomog(domain,smolMode="false"):
   ## LHS terms 
   # Diffusion constant
   Dbulk = parms.d
-  Dii  = Constant((Dbulk,Dbulk,Dbulk))
+  nDims = problem.nDims
+  Dii  = Constant(Dbulk*np.ones(nDims))
   Aij = diag(Dii)  # for now, but could be anisotropic
 
   
@@ -91,7 +92,7 @@ def solveHomog(domain,smolMode="false"):
     #intfact    =    exp(-parms.beta * problem.pmf)
     intfact    =    exp(-1/0.693 * problem.pmf)
     print "WARNING: need to verify that electrostatic part applied correctly for homogeniztion"
-    for i in range(3):
+    for i in range(problem.nDims):
       id = "%d" % i
       n = problem.x[i] * intfact
       temp = project(n,V=Vscalar)
