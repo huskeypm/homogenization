@@ -91,6 +91,17 @@ def solveHomog(domain,smolMode="false"):
     print "WARNING: not using correct beta"
     #intfact    =    exp(-parms.beta * problem.pmf)
     intfact    =    exp(-1/0.693 * problem.pmf)
+
+    #File("xi.pvd") << project(problem.x[0],V=Vscalar)
+    #File("int.pvd") << project(intfact,V=Vscalar)
+    #File("prod.pvd") << project(problem.x[0]*intfact,V=Vscalar)
+    #File("pmf.pvd") << project(problem.pmf,V=Vscalar)
+    #p = problem.x[0]*intfact
+    #grad_Xi_component = p.dx(1)
+    #File("deriv.pvd") << project(grad_Xi_component, V=Vscalar)
+    #print "testing"
+    #quit()
+
     print "WARNING: need to verify that electrostatic part applied correctly for homogeniztion"
     for i in range(problem.nDims):
       id = "%d" % i
