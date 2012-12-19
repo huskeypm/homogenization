@@ -226,6 +226,8 @@ def doit(meshFile="none", case="none",gamer=0):
   print Ds
   print "Dx"
   print Ds[0]
+
+  print "Vol: %f SA: %f\n" % (vol, surf)
   
   # for debug
   # Only relevant for cubes
