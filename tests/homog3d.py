@@ -190,7 +190,16 @@ def doit(meshFile="none", case="none",gamer=0):
   L = rhs(form)
   
   x = Function(V)
-  solve(a == L, x, bcs)
+
+  # NOT GOOD FOR MOST LARGE MESHES solve(a == L, x, bcs)
+  # Use linear variational solver 
+  # Equation is linear, since diffusion coefficient doesn't depend on u,
+  lvproblem = LinearVariationalProblem(a,L, x, bcs=bcs)        
+  solver = LinearVariationalSolver(lvproblem)
+  solver.parameters["linear_solver"] = "gmres"
+  solver.parameters["preconditioner"] = "ilu"
+  solver.solve()
+
   #plot(u,interactive=True)
   name = "%dd.pvd" % dim
   File(name) << x 
@@ -243,6 +252,7 @@ Purpose:
 Usage:
   homog3d.py <-case or -mesh>
 
+  -case = default, auriault, cheng, shorten
 Notes:
 """
 

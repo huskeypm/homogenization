@@ -38,12 +38,13 @@ class MolecularUnitDomain(Domain):
   def __init__(self,fileMesh,fileSubdomains,filePotential="none",\
     # scalar (wrong) or field
     type="field",\
+    boundaryTol=1e-1,\
     # doe mesh come from gamer?
     gamer=1,\
     outpath="./",\
     name = "Molecular",\
     ):
-    super(MolecularUnitDomain,self).__init__(type)
+    super(MolecularUnitDomain,self).__init__(type,EPS=boundaryTol)
 
     problem = self.problem
     problem.fileMesh = fileMesh

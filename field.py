@@ -80,7 +80,13 @@ def solveHomog(domain,smolMode="false"):
   
   # Compute solution
   x = Function(V)
-  solve(a == L, x, problem.bcs)
+  #solve(a == L, x, problem.bcs)
+  lvproblem = LinearVariationalProblem(a,L, x, bcs=problem.bcs)
+  solver = LinearVariationalSolver(lvproblem)
+  solver.parameters["linear_solver"] = "gmres"
+  solver.parameters["preconditioner"] = "ilu"
+  solver.solve()
+
   problem.x = x
   problem.up = Function(problem.V)   
 
@@ -200,7 +206,7 @@ def compute_eff_diff(domain):
     D_eff_project = Function(Vscalar)
    
     solve(us*vs*dx_int==grad_Xi_component*vs*dx_int, D_eff_project)
-    File(outname)<<D_eff_project
+    #File(outname)<<D_eff_project
   
     form = grad_Xi_component * dx_int
   

@@ -38,7 +38,9 @@ case ="none"
 molGamer = 0 
 validationMode = 0
 #outbase= "/tmp/outs/"
-outbase="/home/huskeypm/scratch/homogouts/"
+#outbase="/home/huskeypm/scratch/homogouts/"
+outbase="./"
+boundaryTolerance = 1e-1
 
 # rocce
 cellPrefix="none"
@@ -417,7 +419,7 @@ def SolveHomogSystem(debug=0,\
     potentialFileInner = root+molPrefix+"_values.xml.gz"
     molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,\
       filePotential = potentialFileInner,type="field",gamer=molGamer,\
-      outpath=outbase,name=tag+molPrefix)
+      outpath=outbase,name=tag+molPrefix,boundaryTol=boundaryTolerance)
     molDomUnit.problem.smolMode = smolMode
     # 
     if(option=="troponin"):
@@ -747,6 +749,9 @@ Notes:
 
     if(arg=="-validation"):
       validationMode=sys.argv[i+1]
+
+    if(arg=="-boundaryTol"):
+      boundaryTolerance=float(sys.argv[i+1])
 
 
   #

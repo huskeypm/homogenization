@@ -2,10 +2,12 @@ from dolfin import *
 import numpy as np
 class empty:pass
 
-EPS = 1.e-10
+#EPS = 1.e-10
 # make pretty lax
-EPS = 1.e-1  
+#EPS = 1.e-1  
 # extremely lax for Tn
+#print "WARNING: Using large EPS value %f for boundary" % EPS
+#EPS = 2.
 
 class Domain(object):
   #
@@ -19,7 +21,7 @@ class Domain(object):
                        # ON EDGE 
                        # (np.abs(x[0]-problem.boundsMin[0]) < EPS or np.abs(x[0]-problem.boundsMax[0]) < EPS)\
                        # BEYOND EDGE
-                       (x[0] < (scale[0]*problem.boundsMin[0] + EPS) or x[0] > (scale[0]*problem.boundsMax[0]- EPS))\
+                       (x[0] < (scale[0]*problem.boundsMin[0] + problem.EPS) or x[0] > (scale[0]*problem.boundsMax[0]- problem.EPS))\
                      )
 
       
@@ -31,7 +33,7 @@ class Domain(object):
                        # ON EDGE 
                        # (np.abs(x[1]-problem.boundsMin[1]) < EPS or np.abs(x[1]-problem.boundsMax[1]) < EPS)\
                        # BEYOND EDGE
-                       (x[1] < (scale[1]*problem.boundsMin[1] + EPS) or x[1] > (scale[1]*problem.boundsMax[1]- EPS))\
+                       (x[1] < (scale[1]*problem.boundsMin[1] + problem.EPS) or x[1] > (scale[1]*problem.boundsMax[1]- problem.EPS))\
                        )
       
   class TopBottomBoundary(SubDomain):
@@ -42,7 +44,7 @@ class Domain(object):
                        # ON EDGE 
                        # (np.abs(x[2]-problem.boundsMin[2]) < EPS or np.abs(x[2]-problem.boundsMax[2]) < EPS)\
                        # BEYOND EDGE
-                       (x[2] < (scale[2]*problem.boundsMin[2] + EPS) or x[2] > (scale[2]*problem.boundsMax[2]- EPS))\
+                       (x[2] < (scale[2]*problem.boundsMin[2] + problem.EPS) or x[2] > (scale[2]*problem.boundsMax[2]- problem.EPS))\
                      )
               #print "x[2]:%f %f:%f/%f" % (x[2],problem.boundsMin[2],problem.boundsMin[2],problem.boundsMax[2])
               #print result
@@ -89,22 +91,23 @@ class Domain(object):
   class CenterDomain(SubDomain):
           def inside(self, x, in_boundary):
               problem = self.problem 
-              return all(near(x[i], problem.center_coord[i], EPS) for i in range(problem.nDims))
+              return all(near(x[i], problem.center_coord[i], problem.EPS) for i in range(problem.nDims))
 
 
 
   #
   # FUNCTIONS
   # 
-  def __init__(self,type):
+  def __init__(self,type,EPS=1e-1):
     problem = empty()
     problem.scale = np.array([1.0,1.0,1.0])  # can use values less than 1.0 to assign more vertices to boundary (see BCs) 
     problem.gamma = 1.
     problem.volUnitCell= 1.
-    self.type = type
     problem.init = 1
-    self.gamer = 0 # meshes recorded by gamer are marked differently
+    problem.EPS = EPS 
 
+    self.type = type
+    self.gamer = 0 # meshes recorded by gamer are marked differently
     self.problem = problem
 
   def AssignBC(self,uBoundary=0):
