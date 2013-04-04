@@ -1,6 +1,17 @@
-This program needs validation calls. 
+WARNING:
+1. DO NOT COMMIT UNTIL UNIT TESTS COMPLETE
+2. DO NOT MAKE ENTIRE CODE PUBLIC (need to branch in dev. stuff) 
 
-Was validated against Aurialt's geometry, so should revive this 
 
-Otherwise, use validation from testVolFracs.py
+Unit tests (asserts thrown) 
+To validate accuracy:
+  TO DO. validated against Aurialt's geometry, so should revive this 
+
+To validate consistency:
+  python homog.py -validation lattice
+
+
+To validate electro:
+  python testVolFracs.py  -validation
+
 

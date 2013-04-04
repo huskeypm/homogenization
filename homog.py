@@ -609,18 +609,23 @@ def ValidationLattice():
     f.savefig("Lambda.png")
 
     #plt 
-    upperBound = 2 * interstitialVolFrac / (3-interstitialVolFrac)# per El-Kareh
+    # NOT CORRECT upperBound = 2 * interstitialVolFrac / (3-interstitialVolFrac)# per El-Kareh
     plt.figure()
     plt.plot(interstitialVolFrac,allResults.Deff[:,0]/parms.d,'r-')
     plt.plot(interstitialVolFrac,allResults.Deff[:,1]/parms.d,'g-')
     plt.plot(interstitialVolFrac,allResults.Deff[:,2]/parms.d,'b-')
-    plt.plot(interstitialVolFrac,upperBound,'k.-')
+    # NOT CORRECT plt.plot(interstitialVolFrac,upperBound,'k.-')
     plt.ylabel("$D_{eff}/D]$")
     plt.xlabel("$\phi$")
     plt.title("Effective diffusion versus volume fraction")
-    plt.legend(["x","y","z","analy"])
+    plt.legend(["x","y","z"]) # ,"analy"])
     f=plt.gcf()
     f.savefig("diff_vs_volfrac.png")
+
+    # Unit test 
+    value       = 0.823667233788
+    value130403 = allResults.Deff[0,0]/parms.d
+    assert(np.abs(value-value130403) < 0.001), "RESULT CHANGED. DO NOT COMMIT"
 
 
     return (molEdges,allResults)
