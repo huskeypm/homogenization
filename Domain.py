@@ -1,4 +1,5 @@
 from dolfin import *
+from util import *
 import numpy as np
 class empty:pass
 
@@ -106,6 +107,7 @@ class Domain(object):
     problem.init = 1
     problem.EPS = EPS 
 
+    self.utilObj = util(problem)
     self.type = type
     self.gamer = 0 # meshes recorded by gamer are marked differently
     self.problem = problem
@@ -177,4 +179,13 @@ class Domain(object):
       vol = assemble(Constant(1.) * dx(1), mesh=problem.mesh)
     problem.volume = vol
     print "Volume: %e [um^3]" % vol  
+
+    (boundsMin,boundIdxMin,boundsMax,boundIdxMax) = self.utilObj.CalcBounds(problem.mesh) 
+    diff = boundsMax-boundsMin
+    totVol = np.product(diff)
+    print "Total volume (assuming rectangular): %e [um^3]" % totVol
+    print "volume fraction (assuming rectangular): %e [um^3]" % (vol/totVol)
+    
+
+    
 

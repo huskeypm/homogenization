@@ -10,7 +10,7 @@ import numpy as np
 ### 
 
 class util: 
-  def __init__(self,problem):
+  def __init__(self,problem=0):
     self.prob = problem 
 
   def CalcBounds(self,mesh):

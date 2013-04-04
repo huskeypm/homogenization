@@ -7,6 +7,8 @@
 from dolfin import *
 from params import *
 from util import *
+import numpy as np
+import numpy as np
 
 
 
@@ -85,33 +87,44 @@ def solveHomog(domain,smolMode="false"):
   solver = LinearVariationalSolver(lvproblem)
   solver.parameters["linear_solver"] = "gmres"
   solver.parameters["preconditioner"] = "ilu"
+  print "Using amg preconditioner instead of ilu"
+  solver.parameters["preconditioner"] = "amg"
   solver.solve()
 
   problem.x = x
   problem.up = Function(problem.V)   
 
   if(smolMode!="false"):
+    if(domain.gamer==1):
+      raise RuntimeError("project() does not work with Gamer meshes. Try removing 'domain' info from mesh and rerunning without gamer tag")
     print "Adding in electrostatic component" 
     Vscalar = FunctionSpace(mesh,"CG",1)
 
-    print "WARNING: not using correct beta"
-    #intfact    =    exp(-parms.beta * problem.pmf)
-    intfact    =    exp(-1/0.693 * problem.pmf)
+    intfact = Function(Vscalar)
+    # WAS intfact    =    exp(-1/0.693 * problem.pmf)
+    # WAS intfact    =    exp(-1*parms.beta* problem.pmf)
+    intfact.vector()[:]    =    np.exp(-parms.beta * problem.pmf.vector()[:])
+    #expnpmf.vector()[:] = np.exp(-1*params.beta*params.q*psi.vector()[:])
+    #File("distro.pvd") << project(expnpmf)
+    File("distro.pvd") << intfact
 
-    #File("xi.pvd") << project(problem.x[0],V=Vscalar)
-    #File("int.pvd") << project(intfact,V=Vscalar)
-    #File("prod.pvd") << project(problem.x[0]*intfact,V=Vscalar)
-    #File("pmf.pvd") << project(problem.pmf,V=Vscalar)
-    #p = problem.x[0]*intfact
-    #grad_Xi_component = p.dx(1)
-    #File("deriv.pvd") << project(grad_Xi_component, V=Vscalar)
-    #print "testing"
-    #quit()
+    debugin=1
+    if(debugin):
+
+      File("xi.pvd") << project(problem.x[0],V=Vscalar)
+      File("int.pvd") << project(intfact,V=Vscalar)
+      File("prod.pvd") << project(problem.x[0]*intfact,V=Vscalar)
+      File("pmf.pvd") << project(problem.pmf,V=Vscalar)
+      p = problem.x[0]*intfact
+      grad_Xi_component = p.dx(1)
+      File("deriv.pvd") << project(grad_Xi_component, V=Vscalar)
+      print "testing"
 
     print "WARNING: need to verify that electrostatic part applied correctly for homogeniztion"
     for i in range(problem.nDims):
       id = "%d" % i
       n = problem.x[i] * intfact
+      n = problem.x[i]
       temp = project(n,V=Vscalar)
       fileName = problem.name+"_pmfprojected"+id+".pvd"
       File(fileName) << temp 
@@ -133,6 +146,13 @@ def solveHomog(domain,smolMode="false"):
 
     print "WARNING: may have to redo 'loop' over x[i] to get projection right"
     problem.up = project(problem.x * intfact, V=V)
+
+    #problem.up[1] = project(problem.x[1],V=Vscalar)
+
+
+    #print "ERROR: I CHANGED THIS TO GIVE WRONG ANSWER"
+    #x.vector()[:] = x.vector()[:] * 1.
+    #problem.up = x
 
   # leave
   else:
@@ -178,7 +198,7 @@ def compute_eff_diff(domain):
   import numpy as np
   omegas = np.zeros(dim)
   x = problem.up
-  print "WARNING: verify accuracy of this calculation"
+  # Believe it is correct now print "WARNING: verify accuracy of this calculation"
   # I iterate only over the diagonal, since my original diffusion constant is diagonal 
   for i in range(dim):
     #form = (inner(grad(x[i]),Constant((1,0,0)))+Constant(1)) * dx # works 

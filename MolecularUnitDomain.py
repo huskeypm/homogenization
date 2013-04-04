@@ -2,13 +2,11 @@
 from dolfin import *
 from params import *
 from Domain import *
-from util import * 
 import smol
 
 markerActiveSite = 1
 markerMolecularBoundary =4
 markerOuterBoundary=5
-q = 2.0 # charge Ca2+ 
 
 #class TestRL(SubDomain):
 #  def inside(self, x, on_boundary):
@@ -43,6 +41,8 @@ class MolecularUnitDomain(Domain):
     gamer=1,\
     outpath="./",\
     name = "Molecular",\
+    q = 2.0,  # charge Ca2+ 
+    psi = "none" # usually none, unless psi potential is passed in 
     ):
     super(MolecularUnitDomain,self).__init__(type,EPS=boundaryTol)
 
@@ -55,12 +55,12 @@ class MolecularUnitDomain(Domain):
     self.gamer = gamer
     problem.name = name
     problem.outpath = outpath
+    problem.q = q 
+    problem.psi = psi 
     self.markerOuterBoundary = markerOuterBoundary
+    problem.smolMode = "false"
 
-    if(problem.filePotential!="none"):
-      problem.smolMode="true"
-    else:
-      problem.smolMode="false"
+  
 
   def Setup(self):
     # mesh
@@ -68,40 +68,28 @@ class MolecularUnitDomain(Domain):
     mesh = Mesh(problem.fileMesh)
     problem.mesh = mesh
     # mesh is in A, so converting to um
-    mesh.coordinates()[:] *= parms.ANG_TO_UM
+    # DISABLED problem.mesh.coordinates()[:] *= parms.Ang_to_um
+    # Something is flawed here, since surface area==0 if conversion is used
 
-    utilObj = util(problem)
+    utilObj=self.utilObj
     utilObj.GeometryInitializations()
     utilObj.DefinePBCMappings()
-
-    # rotate to align z axis of molecule with x axis of myocyte
-    print "WARNING: need to rotate mesh to align with myocyte. (my code seemed to cause PETSC error)"
-    #x = mesh.coordinates()[:,0]
-    #z = mesh.coordinates()[:,2]
-    #mesh.coordinates()[:,0] = -1 * z[:]
-    #mesh.coordinates()[:,2] = x[:]
-    #V = FunctionSpace(mesh,"CG",1)
-    #v = Function(V)
-    #File("test.pvd") << v
-    #quit()
-
 
     if(self.type=="scalar"):
         problem.V = FunctionSpace(mesh,"CG",1)
     elif(self.type=="field"):
         problem.V = VectorFunctionSpace(mesh,"CG",1)
 
-    problem.subdomains = MeshFunction(
-      "uint", mesh, problem.fileSubdomains)
+    print "Not loading subdomains, since don't think they're needed"
+    #problem.subdomains = MeshFunction(
+    #  "uint", mesh, problem.fileSubdomains)
     #self.markers = [1,4,5]
 
     # load ESP 
-    if(problem.smolMode=="true"):       
-      print "PUT IN SEPARATE FUNCTION"
-      Vtemp = FunctionSpace(mesh,"CG",1)
-      psi = Function(Vtemp,problem.filePotential)
-      smol.ElectrostaticPMF(problem,psi,V=Vtemp,q=q) # pmf stored internally             
-    
+    if(problem.filePotential!="none" or problem.psi!="none"):
+      problem.smolMode="true"
+      self.InitializeElectrostatics()
+
     # geom
     self.CalcGeom(problem)
 
@@ -115,8 +103,7 @@ class MolecularUnitDomain(Domain):
     # TODO: might need to handle BC at active site as a mixed boundary
     # condition to take into account saturation
     if(self.type=="scalar"):
-        print "REPLACE THIS AS DEBUG OPTION. scalar approach is nonsensical"
-        quit()
+        raise RuntimeError("REPLACE THIS AS DEBUG OPTION. scalar approach is nonsensical") 
         u0 = Constant(0.)
         u1 = Constant(1.)
     elif(self.type=="field"):
@@ -173,6 +160,22 @@ class MolecularUnitDomain(Domain):
       File("appliedBCs.pvd") << z
     
     problem.bcs = bcs
-  
-  
-  
+
+
+  def InitializeElectrostatics(self):
+      problem = self.problem
+      # load in psi from file 
+      Vtemp = FunctionSpace(problem.mesh,"CG",1)
+      if(problem.psi=="none"): 
+        print "Loading electrostatic potential from file"        
+        psi = Function(Vtemp,problem.filePotential)
+   
+      # load in psi from argument 
+      else: 
+        print "Loading electrostatic potential from argument"
+        psi = problem.psi
+
+      smol.ElectrostaticPMF(problem,psi,V=Vtemp,q=problem.q) # pmf stored internally             
+      #File("pmftest.pvd") << problem.psi
+      #File("pmftest.pvd") << psi
+      #quit()

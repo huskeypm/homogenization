@@ -2,7 +2,6 @@
 from dolfin import *
 from params import *
 from Domain import *
-from util import * 
 
 
 markerInsideBoundary= 1
@@ -26,9 +25,10 @@ class CellularUnitDomain(Domain):
     problem.mesh = mesh 
 
     # mesh is in A, so converting to um
-    problem.mesh.coordinates()[:] *= parms.ANG_TO_UM
+    # DISABLED problem.mesh.coordinates()[:] *= parms.Ang_to_um
+    # Something is flawed here, since surface area==0 if conversion is used
 
-    utilObj = util(problem)
+    utilObj=self.utilObj
     utilObj.GeometryInitializations()
     utilObj.DefinePBCMappings()
 

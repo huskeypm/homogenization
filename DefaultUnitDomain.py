@@ -2,7 +2,6 @@
 from dolfin import *
 from params import *
 from Domain import *
-from util import *
 
 
 # bcs
@@ -26,7 +25,7 @@ class DefaultUnitDomain(Domain):
     elif(self.type=="field"):
         problem.V = VectorFunctionSpace(problem.mesh,"CG",1)
 
-    utilObj = util(problem)
+    utilObj=self.utilObj
     utilObj.GeometryInitializations()
     utilObj.DefinePBCMappings()
 

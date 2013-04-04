@@ -34,6 +34,9 @@ import field
 ## 
 debug=0
 smolMode = "false" # tells program that we want to solve the smol equation for the molec domain
+smolPsi = "none"   # can pass in Function() containing electrostatic potential values for the molec domain
+                   # 'none' means that it will be read from file 
+smolq   = 2	   # Ca2+ charge used for smol eqn
 case ="none"
 molGamer = 0 
 validationMode = 0
@@ -328,6 +331,7 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
   print "Finished!"
 
 def CalcFractionalVolumes(cellDomUnit,molDomUnit):
+  "print not sure if i agree  w this formulation"
   cellProblem = cellDomUnit.problem
   molProblem = molDomUnit.problem
   volUnitCell = cellProblem.volume + molProblem.volume 
@@ -378,6 +382,7 @@ def Debug2():
 
 
 # Solves homogenized equations for globular protein embedded inside spherical cellular subdomain 
+# I believe I partitioned this into Cell/Mol domain, as I expected both to occupy a representative unit cell 
 def SolveHomogSystem(debug=0,\
   root="./",\
 #  cellPrefix="cell",molPrefix="mol",wholeCellPrefix="multi_clustered",\
@@ -385,6 +390,8 @@ def SolveHomogSystem(debug=0,\
 # use effective diffusion constant from molecular domain 
   useMoldeff=1,\
   smolMode = "false",\
+  smolq = smolq,\
+  smolPsi = "none",\
 # is molecule from Gamer?
   molGamer=1,\
 # for passing other options
@@ -416,9 +423,14 @@ def SolveHomogSystem(debug=0,\
   if(molPrefix!="none"): 
     meshFileInner = root+molPrefix+"_mesh.xml.gz"
     subdomainFileInner = root+molPrefix+"_subdomains.xml.gz"
-    potentialFileInner = root+molPrefix+"_values.xml.gz"
+    if(smolMode=="true"):
+      potentialFileInner = root+molPrefix+"_values.xml.gz"
+    else: 
+      potentialFileInner  = "none"
+    
     molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,\
       filePotential = potentialFileInner,type="field",gamer=molGamer,\
+      psi = smolPsi, q = smolq,\
       outpath=outbase,name=tag+molPrefix,boundaryTol=boundaryTolerance)
     molDomUnit.problem.smolMode = smolMode
     # 
@@ -442,6 +454,7 @@ def SolveHomogSystem(debug=0,\
 
   ## Solve unit cell problems  
   #if(debug==0):
+  # cellular 
   if(cellPrefix!="none"): 
     print "Solving cellular unit cell using %s" % meshFileOuter
     solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
@@ -449,6 +462,7 @@ def SolveHomogSystem(debug=0,\
     print "WARNING: Using stored d_eff for cell" 
     cellDomUnit.problem.d_eff = np.array([1,1,1])
 
+  # molecular 
   if(molPrefix!="none"): 
     print "Solving molecular unit cell using %s"% meshFileInner
     molDomUnit.smolMode = smolMode
@@ -460,7 +474,7 @@ def SolveHomogSystem(debug=0,\
      
 
 
-  ## whole cell solutions
+  ## whole cell simulation, using d_eff from molecular and cellular unit cells 
   # solve on actual cell domain
   if(wholeCellPrefix!="none"):
     meshFileCellular= root+wholeCellPrefix+"_mesh.xml.gz"
@@ -715,7 +729,7 @@ if __name__ == "__main__":
  
 Usage:
   homog.py -case myofilament/globular/validationSphere/custom <-smol> <-molGamer>
-           <-molPrefix molPrefix> <-validation all/etc>
+           <-molPrefix molPrefix> <-validation all/etc> <-boundaryTol float>
 
   where 
     -smol - run molecular domain with electrostatics
@@ -752,6 +766,7 @@ Notes:
 
     if(arg=="-boundaryTol"):
       boundaryTolerance=float(sys.argv[i+1])
+      print "Using boundary tolerance of %f" % boundaryTolerance
 
 
   #
