@@ -19,7 +19,7 @@ meshName = "meshes/volFrac_0.10.xml"
 
 import homog
 debug = 0
-z = -0.09  # warning, values above 0.2 seem to give unphysical values
+z = -0.075 # warning, values above 0.2 seem to give unphysical values
 molRad = 12.5
 homog.parms.d = 1. # diff constant 
 
@@ -95,7 +95,7 @@ def validation():
   q=1
   volFrac = 0.5
   value =  call(meshPrefix,q,volFrac,molGamer=0)             
-  value130404=0.46510446089
+  value130404=0.535335          
   assert(np.abs(value-value130404) < 0.001), "RESULT CHANGED. DO NOT COMMIT"
 
 
@@ -108,14 +108,14 @@ def doit(asdf):
   #meshes = np.array([0.1,0.2,0.27,0.34,0.5])
   meshes = volFracs
   # kappa hard coded into PB solver
-  qs = np.array([-1,0,1,2])
+  qs = np.array([-2,-1,0,1,2])
   #qs = np.array([-1,0])           
   
   
   if(debug==1):
     qs=[0]
     volFracs=[0.1]
-    qs=[1]
+    qs=[2]
     volFracs=[0.5]
     meshes = volFracs
 
@@ -130,17 +130,19 @@ def doit(asdf):
       molGamer = 0
       results[i,j] = call(meshPrefix,q,volFrac,molGamer=molGamer)
 
-  if(debug==1):
-    return
+  #if(debug==1):
+  #  return
   
   
   plt.figure()
-  col = ["r-","k-","b-","b--"]
+  col = ["r--","r-","k-","b-","b--"]
   for j, q in enumerate(qs):
     label = "qSubstrate = %d " % q
     plt.plot(volFracs,results[:,j], col[j],label=label)
   
-  plt.title("Diffusion hindrance with respect to volume fraction")
+  title="Effective Diffusion versus volume fraction (zsubstrate=%5.2f)"\
+     % z
+  plt.title(title)
   plt.xlabel("Volume fraction")
   plt.ylabel("Dx/Dbulk")
   plt.legend(loc='lower left')
