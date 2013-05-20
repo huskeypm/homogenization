@@ -74,7 +74,18 @@ def solveHomog(domain,smolMode="false"):
   nDims = problem.nDims
   Dii  = Constant(Dbulk*np.ones(nDims))
   Aij = diag(Dii)  # for now, but could be anisotropic
+  Atilde = Aij 
 
+  # electro 
+  if(smolMode!="false"):
+    if(domain.gamer==1):
+      raise RuntimeError("project() does not work with Gamer meshes. Try removing 'domain' info from mesh and rerunning without gamer tag")
+    print "Adding in electrostatic component" 
+    Vscalar = FunctionSpace(mesh,"CG",1)
+    intfact = Function(Vscalar)
+    intfact.vector()[:]    =    np.exp(-parms.beta * problem.pmf.vector()[:])
+    Atilde = intfact * Aij
+    File("distro.pvd") << intfact
   
   # Identity matrix 
   Delta = Identity( mesh.ufl_cell().geometric_dimension()) #
@@ -82,9 +93,9 @@ def solveHomog(domain,smolMode="false"):
   # LHS 
   #print "Gamer", domain.gamer
   if(domain.gamer==0):
-    form = inner(Aij*(grad(u) + Delta), grad(v))*dx
+    form = inner(Atilde*(grad(u) + Delta), grad(v))*dx
   else:
-    form = inner(Aij*(grad(u) + Delta), grad(v))*dx(1) 
+    form = inner(Atilde*(grad(u) + Delta), grad(v))*dx(1) 
   
   # note: we are mixing linear and bilinear forms, so we need to split
   # these up for assembler 
@@ -116,20 +127,8 @@ def solveHomog(domain,smolMode="false"):
   problem.x = x
   problem.up = Function(problem.V)   
 
+
   if(smolMode!="false"):
-    if(domain.gamer==1):
-      raise RuntimeError("project() does not work with Gamer meshes. Try removing 'domain' info from mesh and rerunning without gamer tag")
-    print "Adding in electrostatic component" 
-    Vscalar = FunctionSpace(mesh,"CG",1)
-
-    intfact = Function(Vscalar)
-    # WAS intfact    =    exp(-1/0.693 * problem.pmf)
-    # WAS intfact    =    exp(-1*parms.beta* problem.pmf)
-    intfact.vector()[:]    =    np.exp(-parms.beta * problem.pmf.vector()[:])
-    #expnpmf.vector()[:] = np.exp(-1*params.beta*params.q*psi.vector()[:])
-    #File("distro.pvd") << project(expnpmf)
-    File("distro.pvd") << intfact
-
     debugin=1
     if(debugin):
 

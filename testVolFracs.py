@@ -29,7 +29,7 @@ homog.parms.d = 1. # diff constant
 # molRad - radius of enzeyme 
 # z - enzyme charge
 # q - substrate charge 
-def CalcPotentialtential(mesh,molRad,z,q,meshType="dolfin"):
+def CalcPotential(mesh,molRad,z,q,meshType="dolfin"):
    pb.params.z = z
    pb.params.q = q
    pb.params.molRad = 12.5
@@ -56,8 +56,8 @@ def call(meshPrefix,q,volFrac,molGamer=0):
   mesh = Mesh(meshName)
 
   # ESP 
-  #psi = CalcPotentialtential(mesh,molRad,z,q,meshType="gamer")
-  psi = CalcPotentialtential(mesh,molRad,z,q)
+  #psi = CalcPotential(mesh,molRad,z,q,meshType="gamer")
+  psi = CalcPotential(mesh,molRad,z,q)
 
 
   
@@ -92,11 +92,20 @@ def call(meshPrefix,q,volFrac,molGamer=0):
   
 def validation():
   meshPrefix = "example/volfracs/volFrac_0.50"       
-  q=1
   volFrac = 0.5
-  value =  call(meshPrefix,q,volFrac,molGamer=0)             
-  value130404=0.535335          
-  assert(np.abs(value-value130404) < 0.001), "RESULT CHANGED. DO NOT COMMIT"
+  qp=1
+  valuep =  call(meshPrefix,qp,volFrac,molGamer=0)             
+  q0=0
+  value0 =  call(meshPrefix,q0,volFrac,molGamer=0)             
+  qn=-1
+  valuen =  call(meshPrefix,qn,volFrac,molGamer=0)             
+  #value130404=0.535335
+  value130520=0.55234253        
+  assert(np.abs(valuep-value130520) < 0.001), "RESULT CHANGED. DO NOT COMMIT"
+
+  print "sphere, neutral ", value0
+  print "sphere, positive ", valuep
+  print "sphere, negative ", valuen
 
 
 
