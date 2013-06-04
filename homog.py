@@ -605,12 +605,12 @@ def ValidationLayered(mode):
     analx = np.zeros(np.shape(xs)[0])
     # analytical (X2(x) = 0), Eqn 87c, Auriault 1993  
     ys = gy[0,:]
-    analy = -1 * (ys - np.min(ys))
+    analy = -1 * (ys ) + np.min(ys) + 1 # shifting, since aribtraty constant 
 
    
     plt.plot(ys,analy,"b-",label="Analytical")
     plt.plot(gy[0,:],interp1,"k.",label="Predicted") 
-    plt.title("Layered medium (VERIFY ANALY SOLN)")
+    plt.title("Layered medium ")
     plt.ylabel("$\chi_2$")
     plt.xlabel("y")
     plt.legend()

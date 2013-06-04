@@ -254,6 +254,7 @@ def doit(meshFile="none", case="none",gamer=0):
   
   print "D*"
   Ds = omegas/vol
+  raise RuntimeError("need to use unit cell vol, not pore vol here")
   print Ds
   print "Dx"
   print Ds[0]

@@ -148,7 +148,7 @@ class MolecularUnitDomain(Domain):
     centerDomain.problem = self.problem
     #PKHfixed_center = DirichletBC(problem.V, Constant((0,0,0)), centerDomain, "pointwise")
     fixed_center = DirichletBC(problem.V, Constant(np.zeros(nDim)), centerDomain, "pointwise")
-    #bcs.append(fixed_center)
+    bcs.append(fixed_center)
 
     #PKH 120901 leftRightBoundary=self.PeriodicLeftRightBoundary()
     leftRightBoundary=self.LeftRightBoundary()
