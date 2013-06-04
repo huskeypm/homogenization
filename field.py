@@ -129,7 +129,21 @@ def solveHomog(domain,smolMode="false"):
 
 
   if(smolMode!="false"):
-    debugin=1
+    if(domain.gamer==1):
+      raise RuntimeError("project() does not work with Gamer meshes. Try removing 'domain' info from mesh and rerunning without gamer tag")
+    print "Adding in electrostatic component" 
+    Vscalar = FunctionSpace(mesh,"CG",1)
+
+    intfact = Function(Vscalar)
+    # WAS intfact    =    exp(-1/0.693 * problem.pmf)
+    # WAS intfact    =    exp(-1*parms.beta* problem.pmf)
+    intfact.vector()[:]    =    np.exp(-parms.beta * problem.pmf.vector()[:])
+    #expnpmf.vector()[:] = np.exp(-1*params.beta*params.q*psi.vector()[:])
+    #File("distro.pvd") << project(expnpmf)
+    File("distro.pvd") << intfact
+
+    debugin=0
+    #debugin=1
     if(debugin):
 
       File("xi.pvd") << project(problem.x[0],V=Vscalar)
@@ -141,11 +155,9 @@ def solveHomog(domain,smolMode="false"):
       File("deriv.pvd") << project(grad_Xi_component, V=Vscalar)
       print "testing"
 
-    print "WARNING: need to verify that electrostatic part applied correctly for homogeniztion"
     for i in range(problem.nDims):
       id = "%d" % i
       n = problem.x[i] * intfact
-      n = problem.x[i]
       temp = project(n,V=Vscalar)
       fileName = problem.name+"_pmfprojected"+id+".pvd"
       File(fileName) << temp 
@@ -165,7 +177,6 @@ def solveHomog(domain,smolMode="false"):
       #print len(problem.up.vector())
       #problem.up.vector()[i*l:(i+1)*l] = ci.vector()
 
-    print "WARNING: may have to redo 'loop' over x[i] to get projection right"
     problem.up = project(problem.x * intfact, V=V)
 
     #problem.up[1] = project(problem.x[1],V=Vscalar)

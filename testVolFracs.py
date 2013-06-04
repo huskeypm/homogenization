@@ -124,8 +124,8 @@ def doit(asdf):
   if(debug==1):
     qs=[0]
     volFracs=[0.1]
-    qs=[2]
-    volFracs=[0.5]
+    #qs=[2]
+    volFracs=[0.27]
     meshes = volFracs
 
   results = np.zeros([ np.shape(volFracs)[0], np.shape(qs)[0] ])

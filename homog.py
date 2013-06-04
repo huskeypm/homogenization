@@ -711,80 +711,80 @@ def ValidationPaper(mode="all"):
   if(mode == "layered" or mode == "all"):
     ValidationLayered(mode)
 
-  if(mode=="troponinNoChg" or mode =="all"):
-    molPrefix = "troponin"
-    results = SolveHomogSystem(debug=debug,\
-      root="/home/huskeypm/scratch/homog/mol/",\
-      cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
-      smolMode = "false",
-      molGamer=0,option="troponin",\
-      tag=mode)
-
-    r=results.molDomUnit.problem.d_eff    
-    r = r/np.linalg.norm(r)
-    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
-    allsummary.append(summary)
-
-  if(mode=="troponinWChg" or mode =="all"):
-    molPrefix = "troponin"
-    results = SolveHomogSystem(debug=debug,\
-      root="/home/huskeypm/scratch/homog/mol/",\
-      cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
-      smolMode = "true",
-      molGamer=0,option="troponin",\
-      tag=mode)
-
-    r=results.molDomUnit.problem.d_eff    
-    r = r/np.linalg.norm(r)
-    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
-    allsummary.append(summary)
-
-  if(mode=="cellOnly"):
-    #parms.tStep = 2
-    wholeCellPrefix="multi_clustered"
-    results = SolveHomogSystem(debug=debug,\
-      root="/home/huskeypm/scratch/homog/mol/",\
-      cellPrefix="none", molPrefix="none",wholeCellPrefix=wholeCellPrefix,\
-      smolMode = "false",
-      molGamer=0,\
-      tag=mode)
-
-      # no need to print diff 
-
-  if(mode=="totalNoChg" or mode=="all"): 
-    #parms.tStep = 2
-    cellPrefix="cell"
-    wholeCellPrefix="multi_clustered"
-    molPrefix = "troponin"
-    results = SolveHomogSystem(debug=debug,\
-      root="/home/huskeypm/scratch/homog/mol/",\
-      cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
-      smolMode = "false",
-      molGamer=0,option="troponin",\
-      tag=mode)
-
-    r=results.molDomUnit.problem.d_eff    
-    r = r/np.linalg.norm(r)
-    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
-    allsummary.append(summary)
-
-  if(mode=="totalWChg" or mode =="all"):
-    cellPrefix="cell"
-    wholeCellPrefix="multi_clustered"
-    molPrefix = "troponin"
-    results = SolveHomogSystem(debug=debug,\
-      root="/home/huskeypm/scratch/homog/mol/",\
-      cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
-      smolMode = "true",
-      molGamer=0,option="troponin",\
-      tag=mode)
-
-    r=results.molDomUnit.problem.d_eff    
-    r = r/np.linalg.norm(r)
-    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
-    allsummary.append(summary)
-
-
+#  if(mode=="troponinNoChg" or mode =="all"):
+#    molPrefix = "troponin"
+#    results = SolveHomogSystem(debug=debug,\
+#      root="/home/huskeypm/scratch/homog/mol/",\
+#      cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
+#      smolMode = "false",
+#      molGamer=0,option="troponin",\
+#      tag=mode)
+#
+#    r=results.molDomUnit.problem.d_eff    
+#    r = r/np.linalg.norm(r)
+#    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
+#    allsummary.append(summary)
+#
+#  if(mode=="troponinWChg" or mode =="all"):
+#    molPrefix = "troponin"
+#    results = SolveHomogSystem(debug=debug,\
+#      root="/home/huskeypm/scratch/homog/mol/",\
+#      cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
+#      smolMode = "true",
+#      molGamer=0,option="troponin",\
+#      tag=mode)
+#
+#    r=results.molDomUnit.problem.d_eff    
+#    r = r/np.linalg.norm(r)
+#    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
+#    allsummary.append(summary)
+#
+#  if(mode=="cellOnly"):
+#    #parms.tStep = 2
+#    wholeCellPrefix="multi_clustered"
+#    results = SolveHomogSystem(debug=debug,\
+#      root="/home/huskeypm/scratch/homog/mol/",\
+#      cellPrefix="none", molPrefix="none",wholeCellPrefix=wholeCellPrefix,\
+#      smolMode = "false",
+#      molGamer=0,\
+#      tag=mode)
+#
+#      # no need to print diff 
+#
+#  if(mode=="totalNoChg" or mode=="all"): 
+#    #parms.tStep = 2
+#    cellPrefix="cell"
+#    wholeCellPrefix="multi_clustered"
+#    molPrefix = "troponin"
+#    results = SolveHomogSystem(debug=debug,\
+#      root="/home/huskeypm/scratch/homog/mol/",\
+#      cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
+#      smolMode = "false",
+#      molGamer=0,option="troponin",\
+#      tag=mode)
+#
+#    r=results.molDomUnit.problem.d_eff    
+#    r = r/np.linalg.norm(r)
+#    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
+#    allsummary.append(summary)
+#
+#  if(mode=="totalWChg" or mode =="all"):
+#    cellPrefix="cell"
+#    wholeCellPrefix="multi_clustered"
+#    molPrefix = "troponin"
+#    results = SolveHomogSystem(debug=debug,\
+#      root="/home/huskeypm/scratch/homog/mol/",\
+#      cellPrefix=cellPrefix, molPrefix=molPrefix,wholeCellPrefix=wholeCellPrefix,\
+#      smolMode = "true",
+#      molGamer=0,option="troponin",\
+#      tag=mode)
+#
+#    r=results.molDomUnit.problem.d_eff    
+#    r = r/np.linalg.norm(r)
+#    summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
+#    allsummary.append(summary)
+#
+#
   print allsummary
 
 
