@@ -207,12 +207,9 @@ def compute_eff_diff(domain):
   else:
     dx_int = dx
 
-
   Vscalar = FunctionSpace(mesh,"CG",1)
   us = TrialFunction(Vscalar)
   vs = TestFunction(Vscalar)
-
-
 
   ## get omega
   # treating each component independtly, following Goel's example in sec 2.7 
@@ -257,30 +254,35 @@ def compute_eff_diff(domain):
   
 
   print "omegasO"
-  print omegas/vol
-  problem.omv = omegas/vol
-  problem.domv = parms.d*omegas/vol
-  problem.d_eff = problem.domv 
-  print "WARNING: circumventing use of volUnitCell etc for determining deff"
-  return problem.d_eff 
+  print omegas
+  #print omegas/vol
+  #problem.omv = omegas/vol
+  #problem.domv = parms.d*omegas/vol
+  #problem.d_eff = problem.domv 
+  #print "WARNING: circumventing use of volUnitCell etc for determining deff"
+  #return problem.d_eff 
+  #print "vol", vol
   
   
-  
-  omegas /= problem.gamma
+  print "WARNING: what is gamma?" 
+  #omegas /= problem.gamma
   print "omegas"
   print omegas
   d_eff = parms.d*omegas
-  print "d: %f" % parms.d
-  print "d_eff:"
-  print d_eff
 
   print "Reweighting by unit cell vol"
   d_eff /= problem.volUnitCell
-  print d_eff
+  if(dim==3):
+    print "d_eff= [%4.2f,%4.2f,%4.2f] for d=%4.2f"%\
+      (d_eff[0],d_eff[1],d_eff[2],parms.d)
+  else: 
+    print "d_eff= [%4.2f,%4.2f] for d=%4.2f"%\
+      (d_eff[0],d_eff[1],parms.d)
+  print "problem.volUnitCell", problem.volUnitCell
 
   # normalize
-  nd_eff= d_eff/ np.linalg.norm(d_eff)
-  print "Deff (normalized) ", nd_eff
+  #nd_eff= d_eff/ np.linalg.norm(d_eff)
+  #print "Deff (normalized) ", nd_eff
 
   # store 
   problem.d_eff = d_eff

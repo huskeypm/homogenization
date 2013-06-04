@@ -30,6 +30,7 @@ markerActiveSite = 1
 markerMolecularBoundary =4
 markerOuterBoundary=5
 
+
 #class TestRL(SubDomain):
 #  def inside(self, x, on_boundary):
 #    cond = (np.abs(x[0]- -1) < EPS or np.abs(x[0]-1) < EPS)
@@ -63,6 +64,7 @@ class MolecularUnitDomain(Domain):
     gamer=1,\
     outpath="./",\
     name = "Molecular",\
+    reflectiveBoundary="none",  # use this to force outer cell boundary as reflective, instead of dirichlet 
     q = 2.0,  # charge Ca2+ 
     psi = "none" # usually none, unless psi potential is passed in 
     ):
@@ -73,6 +75,7 @@ class MolecularUnitDomain(Domain):
     problem.fileSubdomains = fileSubdomains
     problem.filePotential= filePotential 
     problem.init = 1
+    self.reflectiveBoundary = reflectiveBoundary
     #print "Enforcing gamer==1"
     self.gamer = gamer
     problem.name = name
@@ -153,7 +156,10 @@ class MolecularUnitDomain(Domain):
     #PKH 120901 bc1 = PeriodicBC(problem.V.sub(0), leftRightBoundary)
     tc1 = DirichletBC(problem.V.sub(0), Constant(1.),leftRightBoundary)
     bc1 = DirichletBC(problem.V.sub(0), Constant(0.),leftRightBoundary)
-    bcs.append(bc1)
+    if(self.reflectiveBoundary!="leftright"):
+      bcs.append(bc1)
+    else:
+      print "Labeling %s as reflective" % self.reflectiveBoundary
 
     #PKH 120901 backFrontBoundary=self.PeriodicBackFrontBoundary()
     backFrontBoundary=self.BackFrontBoundary()
@@ -161,7 +167,10 @@ class MolecularUnitDomain(Domain):
     #PKH 120901 bc2 = PeriodicBC(problem.V.sub(1), backFrontBoundary)
     tc2 = DirichletBC(problem.V.sub(1), Constant(1.),backFrontBoundary)
     bc2 = DirichletBC(problem.V.sub(1), Constant(0.),backFrontBoundary)
-    bcs.append(bc2)
+    if(self.reflectiveBoundary!="backfront"):
+      bcs.append(bc2)
+    else:
+      print "Labeling %s as reflective" % self.reflectiveBoundary
 
     #PKH 120901 topBottomBoundary=self.PeriodicTopBottomBoundary()
     if(nDim>2):
@@ -170,7 +179,10 @@ class MolecularUnitDomain(Domain):
       #PKH 120901 bc3 = PeriodicBC(problem.V.sub(2), topBottomBoundary)
       tc3 = DirichletBC(problem.V.sub(2), Constant(1.),topBottomBoundary)
       bc3 = DirichletBC(problem.V.sub(2), Constant(0.),topBottomBoundary)
-      bcs.append(bc3)
+      if(self.reflectiveBoundary!="topbottom"):
+        bcs.append(bc3)
+      else:
+        print "Labeling %s as reflective" % self.reflectiveBoundary
 
     testBC=1
     if(testBC==1):

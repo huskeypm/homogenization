@@ -353,7 +353,7 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
   print "Finished!"
 
 def CalcFractionalVolumes(cellDomUnit,molDomUnit):
-  "print not sure if i agree  w this formulation"
+  raise RuntimeError("print not sure if i agree  w this formulation") 
   cellProblem = cellDomUnit.problem
   molProblem = molDomUnit.problem
   volUnitCell = cellProblem.volume + molProblem.volume 
@@ -416,6 +416,8 @@ def SolveHomogSystem(debug=0,\
   smolPsi = "none",\
 # is molecule from Gamer?
   molGamer=1,\
+# to force boundary to be reflective 
+  reflectiveBoundary="none", \
 # for passing other options
   option="",\
   tag=""):   # optional tag for file naming 
@@ -453,6 +455,7 @@ def SolveHomogSystem(debug=0,\
     molDomUnit = MolecularUnitDomain(meshFileInner,subdomainFileInner,\
       filePotential = potentialFileInner,type="field",gamer=molGamer,\
       psi = smolPsi, q = smolq,\
+      reflectiveBoundary=reflectiveBoundary,
       outpath=outbase,name=tag+molPrefix,boundaryTol=boundaryTolerance)
     molDomUnit.problem.smolMode = smolMode
     # 
@@ -573,6 +576,46 @@ def ValidationSphere():
   print "Deff (No Electro) ", nd_eff_noelectro
   print "Deff (Electro) ", nd_eff_electro
 
+def ValidationLayered(mode):
+    results = SolveHomogSystem(debug=debug,\
+        root="./validation/layered/",\
+        cellPrefix="none", molPrefix="auriault",wholeCellPrefix="none",\
+        smolMode = "false",\
+        molGamer=molGamer,
+        reflectiveBoundary="backfront",
+        tag=mode)
+
+    #results.molDomUnit.problem.x
+    mins=np.min(results.molDomUnit.problem.mesh.coordinates(),axis=0)
+    maxs=np.max(results.molDomUnit.problem.mesh.coordinates(),axis=0)
+    res = (maxs - mins)/0.05j
+    V=FunctionSpace(results.molDomUnit.problem.mesh,"CG",1)
+    x0 = project(results.molDomUnit.problem.x[0],V=V)
+    x1 = project(results.molDomUnit.problem.x[1],V=V)
+
+    from scipy.interpolate import griddata
+    (gx,gy) = np.mgrid[mins[0]:maxs[0]:res[0],mins[1]:maxs[1]:res[1]]
+    interp0 = griddata(results.molDomUnit.problem.mesh.coordinates(),x0.vector(),(gx,gy))
+    interp0 = np.mean(interp0,axis=1)
+    interp1 = griddata(results.molDomUnit.problem.mesh.coordinates(),x1.vector(),(gx,gy))
+    interp1 = np.mean(interp1,axis=0)
+
+    # analytical (X1(x) = 0), Eqn 87a, Auriault 1993  
+    xs = gx[:,0]
+    analx = np.zeros(np.shape(xs)[0])
+    # analytical (X2(x) = 0), Eqn 87c, Auriault 1993  
+    ys = gy[0,:]
+    analy = -1 * (ys - np.min(ys))
+
+   
+    plt.plot(ys,analy,"b-",label="Analytical")
+    plt.plot(gy[0,:],interp1,"k.",label="Predicted") 
+    plt.title("Layered medium (VERIFY ANALY SOLN)")
+    plt.ylabel("$\chi_2$")
+    plt.xlabel("y")
+    plt.legend()
+    plt.gcf().savefig("layered.png") 
+
 def ValidationLattice():
     allsummary=[]
     mode="valid"
@@ -584,7 +627,7 @@ def ValidationLattice():
     interstitialEdges= np.array([0.50,0.75,1.01,1.25,1.50])
     molEdges    = cellEdge - interstitialEdges
     cellVol = cellEdge**3
-    interstitialVol = interstitialEdges**3
+    interstitialVol = cellVol - (molEdges**3)
     interstitialVolFrac = interstitialVol/cellVol 
 
     
@@ -596,7 +639,7 @@ def ValidationLattice():
     for i,molPrefix in enumerate(molPrefixes):
       print "molPrefix"
       results = SolveHomogSystem(debug=debug,\
-        root="./validation/",\
+        root="./validation/lattice/",\
         cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
         smolMode = "false",\
         molGamer=molGamer,
@@ -631,23 +674,28 @@ def ValidationLattice():
     f.savefig("Lambda.png")
 
     #plt 
-    # NOT CORRECT upperBound = 2 * interstitialVolFrac / (3-interstitialVolFrac)# per El-Kareh
+    # 
+    upperBound = 2 * interstitialVolFrac / (3-interstitialVolFrac)# per El-Kareh
     plt.figure()
-    plt.plot(interstitialVolFrac,allResults.Deff[:,0]/parms.d,'r-')
-    plt.plot(interstitialVolFrac,allResults.Deff[:,1]/parms.d,'g-')
-    plt.plot(interstitialVolFrac,allResults.Deff[:,2]/parms.d,'b-')
-    # NOT CORRECT plt.plot(interstitialVolFrac,upperBound,'k.-')
-    plt.ylabel("$D_{eff}/D]$")
+    plt.plot(interstitialVolFrac,allResults.Deff[:,0]/parms.d,'k.',label="$D_{eff,x}$")
+    #plt.plot(interstitialVolFrac,allResults.Deff[:,1]/parms.d,'g.',label="$D_{eff,x}$")
+    #plt.plot(interstitialVolFrac,allResults.Deff[:,2]/parms.d,'b.',label="$D_{eff,x}$")
+    # 
+    plt.plot(interstitialVolFrac,upperBound,'k-',label="upper bound")
+    lowerBound = 2/3. * interstitialVolFrac
+    plt.plot(interstitialVolFrac,lowerBound,'k--',label="lower bound")
+    plt.ylabel("$D_{eff}/D$")
     plt.xlabel("$\phi$")
-    plt.title("Effective diffusion versus volume fraction")
-    plt.legend(["x","y","z"]) # ,"analy"])
+    plt.title("Cube Lattice: Effective diffusion versus volume fraction")
+    plt.legend(loc=0)#["x","y","z"]) # ,"analy"])
     f=plt.gcf()
     f.savefig("diff_vs_volfrac.png")
 
     # Unit test 
-    value       = 0.823667233788
-    value130403 = allResults.Deff[0,0]/parms.d
-    assert(np.abs(value-value130403) < 0.001), "RESULT CHANGED. DO NOT COMMIT"
+    #value130403 = 0.823667233788
+    value130604 = 0.476182607736
+    value = allResults.Deff[0,0]/parms.d
+    assert(np.abs(value-value130604) < 0.001), "RESULT CHANGED. DO NOT COMMIT"
 
 
     return (molEdges,allResults)
@@ -659,6 +707,9 @@ def ValidationPaper(mode="all"):
 
   if(mode == "lattice" or mode == "all"):
     ValidationLattice()
+
+  if(mode == "layered" or mode == "all"):
+    ValidationLayered(mode)
 
   if(mode=="troponinNoChg" or mode =="all"):
     molPrefix = "troponin"

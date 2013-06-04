@@ -207,6 +207,7 @@ class Domain(object):
     totVol = np.product(diff)
     print "Total volume (assuming rectangular): %e [um^3]" % totVol
     print "volume fraction (assuming rectangular): %e [um^3]" % (vol/totVol)
+    problem.volUnitCell = totVol
     
 
     

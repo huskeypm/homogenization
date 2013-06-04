@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 class params:
-  def __init__(self,d=2.): # Be sure to use float 
+  def __init__(self,d=1.): # Be sure to use float 
     self.d = d # [um^2/s] ??  
     self.concInitial = 0.1 # [uM]
     #self.ANG_TO_UM = 1e-4

@@ -296,6 +296,7 @@ Notes:
 
 
 
+  raise RuntimeError("error w rescaling diff. coef. by volume; fixed in homog.py but not here") 
 
 
 
