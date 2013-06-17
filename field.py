@@ -58,7 +58,7 @@ def CalcConc(domain):
 # Using first-order representation from Higgins paper ()
 # type - scalar is valid only for certain cases
 # smol - add in smol. approach 
-def solveHomog(domain,smolMode="false"):
+def solveHomog(domain,smolMode=False):     
   # mesh
   problem = domain.problem
   mesh = problem.mesh
@@ -77,7 +77,7 @@ def solveHomog(domain,smolMode="false"):
   Atilde = Aij 
 
   # electro 
-  if(smolMode!="false"):
+  if(smolMode==True):         
     if(domain.gamer==1):
       raise RuntimeError("project() does not work with Gamer meshes. Try removing 'domain' info from mesh and rerunning without gamer tag")
     print "Adding in electrostatic component" 
@@ -130,7 +130,7 @@ def solveHomog(domain,smolMode="false"):
   problem.up = Function(problem.V)   
 
 
-  if(smolMode!="false"):
+  if(smolMode==True):        
     if(domain.gamer==1):
       raise RuntimeError("project() does not work with Gamer meshes. Try removing 'domain' info from mesh and rerunning without gamer tag")
     print "Adding in electrostatic component" 
