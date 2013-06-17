@@ -677,7 +677,8 @@ def ValidationLattice():
     # 
     upperBound = 2 * interstitialVolFrac / (3-interstitialVolFrac)# per El-Kareh
     plt.figure()
-    plt.plot(interstitialVolFrac,allResults.Deff[:,0]/parms.d,'k.',label="$D_{eff,x}$")
+    plt.plot(interstitialVolFrac,allResults.Deff[:,0]/parms.d,'k.',
+      markersize=10,label="$D_{eff,x}$")
     #plt.plot(interstitialVolFrac,allResults.Deff[:,1]/parms.d,'g.',label="$D_{eff,x}$")
     #plt.plot(interstitialVolFrac,allResults.Deff[:,2]/parms.d,'b.',label="$D_{eff,x}$")
     # 
