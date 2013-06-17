@@ -76,22 +76,25 @@ def solveHomog(domain,smolMode="false"):
   Aij = diag(Dii)  # for now, but could be anisotropic
   Atilde = Aij 
 
+  # For handling electrostatic portion, if provided. Otherwise pmf==1 
   # electro 
+  Vscalar = FunctionSpace(mesh,"CG",1)
+  intfact = Function(Vscalar)
+  intfact.vector()[:]=1.
   if(smolMode!="false"):
     if(domain.gamer==1):
       raise RuntimeError("project() does not work with Gamer meshes. Try removing 'domain' info from mesh and rerunning without gamer tag")
     print "Adding in electrostatic component" 
-    Vscalar = FunctionSpace(mesh,"CG",1)
-    intfact = Function(Vscalar)
     intfact.vector()[:]    =    np.exp(-parms.beta * problem.pmf.vector()[:])
-    Atilde = intfact * Aij
     File("distro.pvd") << intfact
   
   # Identity matrix 
   Delta = Identity( mesh.ufl_cell().geometric_dimension()) #
+
  
   # LHS 
   #print "Gamer", domain.gamer
+  Atilde = intfact * Aij
   if(domain.gamer==0):
     form = inner(Atilde*(grad(u) + Delta), grad(v))*dx
   else:
@@ -131,16 +134,6 @@ def solveHomog(domain,smolMode="false"):
   if(smolMode!="false"):
     if(domain.gamer==1):
       raise RuntimeError("project() does not work with Gamer meshes. Try removing 'domain' info from mesh and rerunning without gamer tag")
-    print "Adding in electrostatic component" 
-    Vscalar = FunctionSpace(mesh,"CG",1)
-
-    intfact = Function(Vscalar)
-    # WAS intfact    =    exp(-1/0.693 * problem.pmf)
-    # WAS intfact    =    exp(-1*parms.beta* problem.pmf)
-    intfact.vector()[:]    =    np.exp(-parms.beta * problem.pmf.vector()[:])
-    #expnpmf.vector()[:] = np.exp(-1*params.beta*params.q*psi.vector()[:])
-    #File("distro.pvd") << project(expnpmf)
-    File("distro.pvd") << intfact
 
     debugin=0
     #debugin=1

@@ -608,6 +608,7 @@ def ValidationLayered(mode):
     analy = -1 * (ys ) + np.min(ys) + 1 # shifting, since aribtraty constant 
 
    
+    plt.figure()
     plt.plot(ys,analy,"b-",label="Analytical")
     plt.plot(gy[0,:],interp1,"k.",label="Predicted") 
     plt.title("Layered medium ")
@@ -688,6 +689,8 @@ def ValidationLattice():
     plt.ylabel("$D_{eff}/D$")
     plt.xlabel("$\phi$")
     plt.title("Cube Lattice: Effective diffusion versus volume fraction")
+    # plt.xlim([0,1.])
+    # plt.ylim([0,1.])
     plt.legend(loc=0)#["x","y","z"]) # ,"analy"])
     f=plt.gcf()
     f.savefig("diff_vs_volfrac.png")
