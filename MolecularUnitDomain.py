@@ -83,7 +83,7 @@ class MolecularUnitDomain(Domain):
     problem.q = q 
     problem.psi = psi 
     self.markerOuterBoundary = markerOuterBoundary
-    problem.smolMode = "false"
+    problem.smolMode = False
 
   
 
@@ -112,7 +112,7 @@ class MolecularUnitDomain(Domain):
 
     # load ESP 
     if(problem.filePotential!="none" or problem.psi!="none"):
-      problem.smolMode="true"
+      problem.smolMode=True
       self.InitializeElectrostatics()
 
     # geom

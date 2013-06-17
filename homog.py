@@ -55,7 +55,7 @@ import field
 ## VAR
 ## 
 debug=0
-smolMode = "false" # tells program that we want to solve the smol equation for the molec domain
+smolMode = False # tells program that we want to solve the smol equation for the molec domain
 smolPsi = "none"   # can pass in Function() containing electrostatic potential values for the molec domain
                    # 'none' means that it will be read from file 
 smolq   = 2	   # Ca2+ charge used for smol eqn
@@ -80,7 +80,7 @@ root = "/home/huskeypm/scratch/homog/"
 class empty:pass
 
 ## solv. homog cell
-def solve_homogeneous_unit(domain,type="field",debug=0,smolMode="false"):
+def solve_homogeneous_unit(domain,type="field",debug=0,smolMode=False):
   problem = domain.problem
 
   ## debug mode
@@ -411,7 +411,7 @@ def SolveHomogSystem(debug=0,\
   cellPrefix="none",molPrefix="none",wholeCellPrefix="none",\
 # use effective diffusion constant from molecular domain 
   useMoldeff=1,\
-  smolMode = "false",\
+  smolMode = False,\
   smolq = smolq,\
   smolPsi = "none",\
 # is molecule from Gamer?
@@ -447,7 +447,7 @@ def SolveHomogSystem(debug=0,\
   if(molPrefix!="none"): 
     meshFileInner = root+molPrefix+"_mesh.xml.gz"
     subdomainFileInner = root+molPrefix+"_subdomains.xml.gz"
-    if(smolMode=="true"):
+    if(smolMode==True):
       potentialFileInner = root+molPrefix+"_values.xml.gz"
     else: 
       potentialFileInner  = "none"
@@ -546,14 +546,14 @@ def ValidationSphere():
   #problem.pmf.vector()[:] = 0
   File("test.pvd") << problem.pmf
   #problem.pmf.vector()[:] = 0
-  smolMode = "true"
-  smolMode = "false"
+  smolMode = True
+  smolMode = False
   solve_homogeneous_unit(molDomUnit,type="field",debug=debug,smolMode=smolMode)
   quit()
 
   ## gamer sphere 
   print "No electro" 
-  smolMode = "false" # tells program that we want to solve the smol equation for the molec domain
+  smolMode = False # tells program that we want to solve the smol equation for the molec domain
   noelectroResults = SolveHomogSystem(debug=debug,\
     root=root,\
     molPrefix=molPrefix,
@@ -561,7 +561,7 @@ def ValidationSphere():
     molGamer=0)
 
   print "With electro"
-  smolMode = "true" # tells program that we want to solve the smol equation for the molec domain
+  smolMode = True # tells program that we want to solve the smol equation for the molec domain
   electroResults = SolveHomogSystem(debug=debug,\
     root=root,\
     molPrefix=molPrefix,
@@ -580,7 +580,7 @@ def ValidationLayered(mode):
     results = SolveHomogSystem(debug=debug,\
         root="./validation/layered/",\
         cellPrefix="none", molPrefix="auriault",wholeCellPrefix="none",\
-        smolMode = "false",\
+        smolMode = False,\
         molGamer=molGamer,
         reflectiveBoundary="backfront",
         tag=mode)
@@ -642,7 +642,7 @@ def ValidationLattice():
       results = SolveHomogSystem(debug=debug,\
         root="./validation/lattice/",\
         cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
-        smolMode = "false",\
+        smolMode = False,\
         molGamer=molGamer,
         tag=mode)
 
@@ -832,7 +832,7 @@ Notes:
   for i,arg in enumerate(sys.argv):
     if(arg=="-smol"):
       print "Ensabling electrostatics contribution" 
-      smolMode = "true"
+      smolMode = True
 
     if(arg=="-case"):
       case = sys.argv[i+1]

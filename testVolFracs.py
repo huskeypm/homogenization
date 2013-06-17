@@ -75,7 +75,7 @@ def call(meshPrefix,q,volFrac,molGamer=0):
   #homog.SolveHomogSystem(molPrefix=meshPrefix,molGamer=molGamer)  
   #quit()
   results = homog.SolveHomogSystem(molPrefix=meshPrefix,molGamer=molGamer,\
-    smolMode="true",smolPsi=psi,smolq = q)
+    smolMode=True,smolPsi=psi,smolq = q)
   Dx = results.molDomUnit.problem.d_eff[0]
 
   #(V,x) = pb.SolvePoissonBoltzmann(mesh)
