@@ -277,7 +277,7 @@ def compute_eff_diff(domain):
   #print "vol", vol
   
   
-  print "WARNING: what is gamma?" 
+  #print "WARNING: what is gamma?" 
   #omegas /= problem.gamma
   print "omegas"
   print omegas

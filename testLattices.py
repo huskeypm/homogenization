@@ -20,6 +20,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 ----------------------------------------------------------------------------
 """
+import sys
+sys.path.append("/home/huskeypm/bin/grids/")
 from makeLattice import *
 from homog import *
 import numpy as np
