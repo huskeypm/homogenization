@@ -570,11 +570,11 @@ def ValidationSphere():
 
   # compare diff const
   d_eff_noelectro = noelectroResults.molDomUnit.problem.d_eff
-  nd_eff_noelectro = d_eff_noelectro / np.linalg.norm(d_eff_noelectro)
+  #nd_eff_noelectro = d_eff_noelectro / np.linalg.norm(d_eff_noelectro)
   d_eff_electro = electroResults.molDomUnit.problem.d_eff
-  nd_eff_electro = d_eff_electro / np.linalg.norm(d_eff_electro)
-  print "Deff (No Electro) ", nd_eff_noelectro
-  print "Deff (Electro) ", nd_eff_electro
+  #nd_eff_electro = d_eff_electro / np.linalg.norm(d_eff_electro)
+  #print "Deff (No Electro) ", nd_eff_noelectro
+  #print "Deff (Electro) ", nd_eff_electro
 
 def ValidationLayered(mode):
     results = SolveHomogSystem(debug=debug,\
@@ -650,7 +650,8 @@ def ValidationLattice():
       r=results.molDomUnit.problem.d_eff    
       allResults.Deff[i,:] = r[:]
       allResults.lambdax[i] = 1 / np.sqrt(r[0]/parms.d)
-      r = r/np.linalg.norm(r)
+      print "WHY AM I NORMALIZED?"
+      #r = r/np.linalg.norm(r)
       summary = "%s & Deff (%e,%e,%e) \\ \n" % (mode,r[0],r[1],r[2])
       allsummary.append(summary)
 
@@ -912,8 +913,8 @@ Notes:
       smolMode = smolMode,
       molGamer=molGamer)
     r=results.molDomUnit.problem.d_eff    
-    r = r/np.linalg.norm(r)
-    print r
+    #r = r/np.linalg.norm(r)
+    #print r
 
   else:
     msg = "Case " + case + " not understood"   
