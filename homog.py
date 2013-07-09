@@ -578,7 +578,7 @@ def ValidationSphere():
 
 def ValidationLayered(mode):
     results = SolveHomogSystem(debug=debug,\
-        root="./validation/layered/",\
+        root="./example/layered/",\
         cellPrefix="none", molPrefix="auriault",wholeCellPrefix="none",\
         smolMode = False,\
         molGamer=molGamer,
@@ -640,7 +640,7 @@ def ValidationLattice():
     for i,molPrefix in enumerate(molPrefixes):
       print "molPrefix"
       results = SolveHomogSystem(debug=debug,\
-        root="./validation/lattice/",\
+        root="./example/lattice/",\
         cellPrefix="none", molPrefix=molPrefix,wholeCellPrefix="none",\
         smolMode = False,\
         molGamer=molGamer,
