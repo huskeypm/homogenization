@@ -1,4 +1,4 @@
-"
+"""
 ----------------------------------
 Smolfin - a numerical solver of the Smoluchowski equation for interesting geometries
 Copyright (C) 2012 Peter Kekenes-Huskey, Ph.D., huskeypm@gmail.com
@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 ----------------------------------------------------------------------------
-"
+"""
 #
 # Revisions
 # 121009 fixed dimension error in DefineBoundary
@@ -123,6 +123,8 @@ def doit(meshFile="none", case="none",gamer=0):
     for i in np.arange( mesh.ufl_cell().geometric_dimension() ):
       boundsMin[i] = np.min(mesh.coordinates()[:,i])
       boundsMax[i] = np.max(mesh.coordinates()[:,i])
+
+    boundsMax[2]=1; boundsMin[2]=0
   
   else:
     mesh = Mesh(meshFile)     
@@ -253,13 +255,14 @@ def doit(meshFile="none", case="none",gamer=0):
     surf = assemble( Constant(1)*ds,mesh=mesh ) 
   
   print "D*"
-  Ds = omegas/vol
-  raise RuntimeError("need to use unit cell vol, not pore vol here")
+  unitCellVol =   np.prod(boundsMax-boundsMin)
+
+  Ds = omegas/unitCellVol
   print Ds
   print "Dx"
   print Ds[0]
 
-  print "Vol: %f SA: %f\n" % (vol, surf)
+  print "Vol: %f SA: %f unitCellVol %f\n" % (vol, surf,unitCellVol)
   
   # for debug
   # Only relevant for cubes
@@ -297,7 +300,7 @@ Notes:
 
 
 
-  raise RuntimeError("error w rescaling diff. coef. by volume; fixed in homog.py but not here") 
+  #raise RuntimeError("error w rescaling diff. coef. by volume; fixed in homog.py but not here") 
 
 
 
