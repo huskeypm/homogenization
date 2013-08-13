@@ -101,11 +101,12 @@ def validation():
   valuen =  call(meshPrefix,qn,volFrac,molGamer=0)             
   #value130404=0.535335
   value130520=0.55234253        
-  assert(np.abs(valuep-value130520) < 0.001), "RESULT CHANGED. DO NOT COMMIT"
 
   print "sphere, neutral ", value0
   print "sphere, positive ", valuep
   print "sphere, negative ", valuen
+
+  assert(np.abs(valuep-value130520) < 0.001), "RESULT CHANGED. DO NOT COMMIT"
 
 
 

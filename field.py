@@ -61,6 +61,7 @@ def CalcConc(domain):
 def solveHomog(domain,smolMode=False):     
   # mesh
   problem = domain.problem
+  problem.smolMode=smolMode
   mesh = problem.mesh
   V = problem.V
 
@@ -84,8 +85,10 @@ def solveHomog(domain,smolMode=False):
     Vscalar = FunctionSpace(mesh,"CG",1)
     intfact = Function(Vscalar)
     intfact.vector()[:]    =    np.exp(-parms.beta * problem.pmf.vector()[:])
+    pm = np.asarray(problem.pmf.vector()[:]); print "pmf REMOVEME %f,%f "  % (np.min(pm),np.max(pm))
+    
     ifact = np.asarray(intfact.vector()[:])
-    print "Intfact %f,%f "  % (np.max(ifact),np.min(ifact))
+    print "Intfact: exp(p); %f,%f "  % (np.min(ifact),np.max(ifact))
     Atilde = intfact * Aij
     File("distro.pvd") << intfact
   
@@ -129,72 +132,12 @@ def solveHomog(domain,smolMode=False):
   problem.x = x
   problem.up = Function(problem.V)   
 
-
-  if(smolMode==True):        
-    if(domain.gamer==1):
-      raise RuntimeError("project() does not work with Gamer meshes. Try removing 'domain' info from mesh and rerunning without gamer tag")
-    print "Adding in electrostatic component" 
-    Vscalar = FunctionSpace(mesh,"CG",1)
-
-    intfact = Function(Vscalar)
-    # WAS intfact    =    exp(-1/0.693 * problem.pmf)
-    # WAS intfact    =    exp(-1*parms.beta* problem.pmf)
-    intfact.vector()[:]    =    np.exp(-parms.beta * problem.pmf.vector()[:])
-    #expnpmf.vector()[:] = np.exp(-1*params.beta*params.q*psi.vector()[:])
-    #File("distro.pvd") << project(expnpmf)
-    File("distro.pvd") << intfact
-
-    debugin=0
-    #debugin=1
-    if(debugin):
-
-      File("xi.pvd") << project(problem.x[0],V=Vscalar)
-      File("int.pvd") << project(intfact,V=Vscalar)
-      File("prod.pvd") << project(problem.x[0]*intfact,V=Vscalar)
-      File("pmf.pvd") << project(problem.pmf,V=Vscalar)
-      p = problem.x[0]*intfact
-      grad_Xi_component = p.dx(1)
-      File("deriv.pvd") << project(grad_Xi_component, V=Vscalar)
-      print "testing"
-
-    for i in range(problem.nDims):
-      id = "%d" % i
-      n = problem.x[i] * intfact
-      temp = project(n,V=Vscalar)
-      fileName = problem.name+"_pmfprojected"+id+".pvd"
-      File(fileName) << temp 
-   
-      # DEBUG 
-      #test = project(x[i],V=Vscalar)
-      #fileName = problem.name+"_comp"+id+".pvd"
-      #File(fileName) << test
-      ## NO WORK fileName = problem.name+"_test2.pvd"
-      ##File(fileName) << x[0]
-
-      # apply 
-      #problem.x[i].vector()[:] = n.vector()[:]
-      #ci = project(problem.x[i]*problem.pmf,V=Vscalar)
-      #l = len(ci.vector())
-      #print i,l
-      #print len(problem.up.vector())
-      #problem.up.vector()[i*l:(i+1)*l] = ci.vector()
-
-    problem.up = project(problem.x * intfact, V=V)
-
-    #problem.up[1] = project(problem.x[1],V=Vscalar)
+  Vs = FunctionSpace(mesh,"CG",1)
+  up = project(x[0],V=Vs)    
+  ar=np.asarray(up.vector())
 
 
-    #print "ERROR: I CHANGED THIS TO GIVE WRONG ANSWER"
-    #x.vector()[:] = x.vector()[:] * 1.
-    #problem.up = x
-
-  # leave
-  else:
-    problem.up.vector()[:] = problem.x.vector()[:]
-    ## Project solution to a continuous function space
-    # WARNING: this projection doesn't seem to give me meaningful output (e.q solns == 0)
-    #problem.up = project(x, V=V)
-  
+  problem.up.vector()[:] = problem.x.vector()[:]
 
   
   # save soln
@@ -232,29 +175,21 @@ def compute_eff_diff(domain):
   # Believe it is correct now print "WARNING: verify accuracy of this calculation"
   # I iterate only over the diagonal, since my original diffusion constant is diagonal 
   for i in range(dim):
-    #form = (inner(grad(x[i]),Constant((1,0,0)))+Constant(1)) * dx # works 
-    # Here  we suppose to be extracting the ith derivative of x[i]
-    #v = [0,0,0]
-    #v[i] = 1
-    #grad_Xi_component = inner(grad(x[i]),Constant((v[0],v[1],v[2]))) + Constant(1)
-
-    # test 
-    #outname = "diff%d.pvd" % i
-    #File(outname)<<project(grad_Xi_component,V=Vscalar)
-
-    #if (domain.gamer==0):
-    #  form = grad_Xi_component * dx 
-    #else:
-    #  form = grad_Xi_component * dx(1)
-#
-#    integrand = assemble(form)
-#    omegas[i] = integrand
 
     # JOHAN 
-    grad_Xi_component = x[i].dx(i)+Constant(1)
+    D_eff_project = Function(Vscalar)
+
+    ## apply leading exp(-PMF) term to diff. integral for homogenized smol eqn  
+    if(problem.smolMode):
+      intfact = Function(Vscalar)
+      intfact.vector()[:]    =    np.exp(-parms.beta * problem.pmf.vector()[:])
+      grad_Xi_component = intfact*(x[i].dx(i)+Constant(1))
+
+    ## standard approach
+    else:
+      grad_Xi_component = x[i].dx(i)+Constant(1)
     outname = "diff%d.pvd" % i
 
-    D_eff_project = Function(Vscalar)
    
     solve(us*vs*dx_int==grad_Xi_component*vs*dx_int, D_eff_project)
     #File(outname)<<D_eff_project
