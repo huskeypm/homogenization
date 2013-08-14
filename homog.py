@@ -38,6 +38,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 from dolfin import *
 import numpy as np
 from params import *
+parms = params() # conflicts with params from smol
 import matplotlib.pyplot as plt
 
 # classes
@@ -81,6 +82,8 @@ class empty:pass
 
 ## solv. homog cell
 def solve_homogeneous_unit(domain,type="field",debug=0,smolMode=False):
+  print "WARNING: assuming D=1."
+  parms.D = 1.0
   problem = domain.problem
 
   ## debug mode

@@ -203,13 +203,24 @@ def doit(meshFile="none", case="none",gamer=0):
   Aij = diag(Dii) 
   #Delta = Identity( mesh.ufl_cell().geometric_dimension()) #
   Delta = Identity( dim )
+
+  print "WARNING: CODE IS DEPREACATED"
+  Vscalar = FunctionSpace(mesh,"CG",1)
+  pmf = Function(Vscalar)
+  pmf.vector()[:] = 1.
+  Vmax = 999
+  c = mesh.coordinates()
+  idx=np.where(c[:,1] > 0.8)
+  pmf.vector()[idx[0]]=Vmax
+  idx=np.where(c[:,1] < 0.2)
+  pmf.vector()[idx[0]]=Vmax
   
   u = TrialFunction(V)
   v = TestFunction(V)
   if(gamer==1):
-    form = inner(Aij*(grad(u) + Delta), grad(v))*dx(1)
+    form = inner(Aij*pmf*(grad(u) + Delta), grad(v))*dx(1)
   else:
-    form = inner(Aij*(grad(u) + Delta), grad(v))*dx
+    form = inner(Aij*pmf*(grad(u) + Delta), grad(v))*dx
   a = lhs(form)
   L = rhs(form)
   
@@ -233,9 +244,9 @@ def doit(meshFile="none", case="none",gamer=0):
     v = [0,0,0]
     v[i] = 1
     if(dim==2):
-      grad_Xi_component = inner(grad(x[i]),Constant((v[0],v[1]))) + Constant(1)
+      grad_Xi_component = pmf*inner(grad(x[i]),Constant((v[0],v[1]))) + Constant(1)
     elif(dim==3):
-      grad_Xi_component = inner(grad(x[i]),Constant((v[0],v[1],v[2]))) + Constant(1)
+      grad_Xi_component = pmf*inner(grad(x[i]),Constant((v[0],v[1],v[2]))) + Constant(1)
     outname = "diff%d.pvd" % i
     Vscalar = FunctionSpace(mesh,"CG",1)
     File(outname)<<project(grad_Xi_component,V=Vscalar)
@@ -255,7 +266,11 @@ def doit(meshFile="none", case="none",gamer=0):
     surf = assemble( Constant(1)*ds,mesh=mesh ) 
   
   print "D*"
-  unitCellVol =   np.prod(boundsMax-boundsMin)
+  diff=boundsMax-boundsMin
+  if(dim==2):
+    unitCellVol =   np.prod(diff[0:2])
+  else:
+    unitCellVol =   np.prod(diff[0:3])
 
   Ds = omegas/unitCellVol
   print Ds

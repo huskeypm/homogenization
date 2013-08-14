@@ -33,6 +33,6 @@ class params:
     self.tStep = 20
     self.beta = 1/0.593 # [kcal/mol]
 
-from params import *
+#from params import *
 parms = params()
 

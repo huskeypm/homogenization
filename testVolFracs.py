@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import matplotlib.pylab as plt
-sys.path.append("/home/huskeypm/sources/smolfin/")
+#sys.path.append("/home/huskeypm/sources/smolfin/")
 #sys.path.append("/home/huskeypm/sources/homogenization/")
 
 from dolfin import *
@@ -17,11 +17,10 @@ meshName = "meshes/volFrac_0.10.xml"
 #pb.params.domRad = 200
 #(V,x) = pb.SolvePoissonBoltzmann(mesh,meshType="gamer")
 
-import homog
+import homoglight as hl
 debug = 0
-z = -0.075 # warning, values above 0.2 seem to give unphysical values
-molRad = 12.5
-homog.parms.d = 1. # diff constant 
+zProt = -3 # [mV]
+molRad = 12.5 # [A]5 # [A] 
 
 #import homog_w_electro as hwe
   #Dx = hwe.doit(meshFile="meshes/volFrac_0.10.xml",meshType="gamer")
@@ -29,20 +28,31 @@ homog.parms.d = 1. # diff constant
 # molRad - radius of enzeyme 
 # z - enzyme charge
 # q - substrate charge 
-def CalcPotential(mesh,molRad,z,q,meshType="dolfin"):
-   pb.params.z = z
-   pb.params.q = q
-   pb.params.molRad = 12.5
-   pb.params.sphericalDomainBoundary=False
+
+def CalcPMF(mesh,molRad,zLig,zProt,meshType="dolfin"):
+   print "zLig=",zLig
+   print "zProt",zProt
+   pb.parms.zLig = zLig
+   pb.parms.zProt = zProt
+   pb.parms.molRad = 12.5
+   pb.parms.sphericalDomainBoundary=False
+   pb.parms.update()
    (Vdumm,psi) = pb.SolvePoissonBoltzmann(mesh,meshType=meshType)
    name = "elect.pvd"
+   psiar = np.asarray(psi.vector()[:])
+   print "Psi min/max %f/%f [mV?]" %(np.min(psiar),np.max(psiar))
+    
    File(name) << psi
 
-   return psi 
-
+   # convert from [mV] to [kT/|z|]  
+   pmf = Function(Vdumm)
+   pmf.vector()[:]= psi.vector()[:]*pb.parms.F_o_RT*pb.parms.kT
+   pmfar = np.asarray(pmf.vector()[:])
+   print "Pmf min/max %f/%f [mV?]" %(np.min(pmfar),np.max(pmfar))
+   return pmf 
   
 
-def call(meshPrefix,q,volFrac,molGamer=0):
+def call(meshPrefix,zLig,volFrac,molGamer=0):
 #  hwe.params.z = -1
 #  hwe.pb.molRad = 12.5
 #  hwe.pb.sphericalDomainBoundary=False
@@ -56,9 +66,8 @@ def call(meshPrefix,q,volFrac,molGamer=0):
   mesh = Mesh(meshName)
 
   # ESP 
-  #psi = CalcPotential(mesh,molRad,z,q,meshType="gamer")
-  psi = CalcPotential(mesh,molRad,z,q)
-
+  #psi = CalcPMF(mesh,molRad,z,q,meshType="gamer")
+  psi = CalcPMF(mesh,molRad,zLig,zProt)
 
   
   # double check size just in case
@@ -74,9 +83,10 @@ def call(meshPrefix,q,volFrac,molGamer=0):
   #solve_homogeneous_unit(molDomUnit,type="field",debug=debug,smolMode=smolMode)
   #homog.SolveHomogSystem(molPrefix=meshPrefix,molGamer=molGamer)  
   #quit()
-  results = homog.SolveHomogSystem(molPrefix=meshPrefix,molGamer=molGamer,\
-    smolMode=True,smolPsi=psi,smolq = q)
-  Dx = results.molDomUnit.problem.d_eff[0]
+  #results = homog.SolveHomogSystem(molPrefix=meshPrefix,molGamer=molGamer,\
+  #  smolMode=True,smolPsi=pmf,smolq = zLig)
+  results = hl.runHomog(fileXML=meshName,psi=psi,q=zLig,smolMode=True)
+  Dx = results.d_eff[0]
 
   #(V,x) = pb.SolvePoissonBoltzmann(mesh)
   # do electro homog
@@ -91,14 +101,16 @@ def call(meshPrefix,q,volFrac,molGamer=0):
   
   
 def validation():
-  meshPrefix = "example/volfracs/volFrac_0.50"       
-  volFrac = 0.5
-  qp=1
-  valuep =  call(meshPrefix,qp,volFrac,molGamer=0)             
-  q0=0
-  value0 =  call(meshPrefix,q0,volFrac,molGamer=0)             
-  qn=-1
-  valuen =  call(meshPrefix,qn,volFrac,molGamer=0)             
+  meshPrefix = "example/volfracs/volFrac_0.10"       
+  volFrac = 0.1
+  zLig=1
+  zLig=-1
+  valuep =  call(meshPrefix,zLig,volFrac,molGamer=0)             
+  quit()
+  zLig=0
+  value0 =  call(meshPrefix,zLig,volFrac,molGamer=0)             
+  zLig=-1
+  valuen =  call(meshPrefix,zLig,volFrac,molGamer=0)             
   #value130404=0.535335
   value130520=0.55234253        
 
@@ -140,6 +152,9 @@ def doit(asdf):
       molGamer = 0
       results[i,j] = call(meshPrefix,q,volFrac,molGamer=molGamer)
 
+  print "WARNING: should obtain these directly from sims, not ests"
+  volFracActual = 1-volFracs
+
   #if(debug==1):
   #  return
   
@@ -147,15 +162,15 @@ def doit(asdf):
   plt.figure()
   col = ["r--","r-","k-","b-","b--"]
   for j, q in enumerate(qs):
-    label = "qSubstrate = %d " % q
-    plt.plot(volFracs,results[:,j], col[j],label=label)
+    label = "zLig= %d " % q
+    plt.plot(volFracActual,results[:,j], col[j],label=label)
   
-  title="Effective Diffusion versus volume fraction (zsubstrate=%5.2f)"\
-     % z
+  title="Effective Diffusion versus volume fraction (zProtein=%5.2f)"\
+     % zProt
   plt.title(title)
   plt.xlabel("Volume fraction")
   plt.ylabel("Dx/Dbulk")
-  plt.legend(loc='lower left')
+  plt.legend(loc=0)
   
   plt.gcf().savefig("volfrac.png")
   
@@ -183,7 +198,7 @@ Purpose:
  
 Usage:
 """
-  msg+="  %s -debug" % (scriptName)
+  msg+="  %s -debug/-validation" % (scriptName)
   msg+="""
   
  

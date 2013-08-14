@@ -1,6 +1,6 @@
 # very simple module for homogenzation 
 
-from homog import *
+from homog  import *
 def runHomog(fileXML="test.xml",psi="none",smolMode=False,q=0,verbose=False):
   fileSubdomains = "none"
   molDomUnit = MolecularUnitDomain(fileXML,fileSubdomains,gamer=0,\
