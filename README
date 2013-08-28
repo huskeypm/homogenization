@@ -12,6 +12,7 @@ To validate consistency:
 
 
 To validate electro:
-  python testVolFracs.py  -validation
+  #python testVolFracs.py  -validation
+  This file is now part of the smolhomog source 
 
 
