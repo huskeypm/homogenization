@@ -1,13 +1,14 @@
 # very simple module for homogenzation 
 
-from homog import *
-def runHomog(fileXML="test.xml",psi="none",smolMode=False,q=0,verbose=False,gamer=0):
+from homog  import *
+def runHomog(fileXML="test.xml",psi="none",smolMode=False,q=0,verbose=False,\
+             gamer=0,reflectiveBoundary="none"):
   fileSubdomains = "none"
-  molDomUnit = MolecularUnitDomain(fileXML,fileSubdomains,gamer=gamer,\
+  molDomUnit = MolecularUnitDomain(fileXML,fileSubdomains,\
+                 reflectiveBoundary=reflectiveBoundary,gamer=gamer,\
     psi=psi,q=q)
   molDomUnit.Setup()
   molDomUnit.AssignBC()
-
   solve_homogeneous_unit(molDomUnit,smolMode=smolMode)
 
   problem = molDomUnit.problem

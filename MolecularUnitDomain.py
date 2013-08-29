@@ -69,7 +69,6 @@ class MolecularUnitDomain(Domain):
     psi = "none" # usually none, unless psi potential is passed in 
     ):
     super(MolecularUnitDomain,self).__init__(type,EPS=boundaryTol)
-
     problem = self.problem
     problem.fileMesh = fileMesh
     problem.fileSubdomains = fileSubdomains
@@ -171,6 +170,8 @@ class MolecularUnitDomain(Domain):
       bcs.append(bc2)
     else:
       print "Labeling %s as reflective" % self.reflectiveBoundary
+    #print self.reflectiveBoundary
+    #quit()
 
     #PKH 120901 topBottomBoundary=self.PeriodicTopBottomBoundary()
     if(nDim>2):
