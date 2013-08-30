@@ -3,11 +3,14 @@ For making simple sphere-centric meshes with prescribed volume
 fractions
 """
 
+path = "/net/home/huskeypm/Sources/homogenization/example/volfracs/"
 import sys
+sys.path.append("/net/home/huskeypm/Sources/homogenization/example/volfracs/")
+sys.path.append("/net/home/huskeypm/bin/grids/")
 #sys.path.append("/home/huskeypm/sources/smolfin/")
 from gamer import SurfaceMesh, GemMesh
 from meshmanipulate import *
-from gmshUtil import *
+# no clue what this was for from gmshUtil import *
 
 #
 # Revisions
@@ -15,14 +18,15 @@ from gmshUtil import *
 #
 
 import numpy as np
-def Make3DMesh(volFrac=0.27,rSphere=12.5,dBox=65.,name="test"):
-  sm = SurfaceMesh("./meshes/cube_high.off")
+def Make3DMesh(rSphere=12.5,dBox=65.,name="test"):
+  sm = SurfaceMesh(path+"/cube_high.off")
   center(sm)
 
   rBox = dBox/2.
   scaleGeom(sm,rBox)
 
-  inner = SurfaceMesh(4)
+  #inner = SurfaceMesh(4) # too low for PMF stuff
+  inner = SurfaceMesh(6)
   scaleGeom(inner,rSphere)
 
   inner.as_hole = True
@@ -36,7 +40,7 @@ import sys
 def doit(fileIn):
   rSphere = 12.5
 
-  volFracs = [0.10,.20,.27,.34,.50]
+  volFracs = [0.05,0.10,.20,.27,.34,0.4,0.5] # can't go hifher than 0.5 
 
   for i,volFrac in enumerate(volFracs):
     vSphere = (4/3.*np.pi * rSphere**3)
@@ -44,8 +48,8 @@ def doit(fileIn):
     dBox = vBox**(1/3.)
     #name = "volFrac_%4.2f.geo" % volFrac
     # test with 2D MakeGmsh(volFrac=volFrac,rSphere=rSphere,dBox=dBox)
-    name = "./meshes/volFrac_%4.2f.xml" % volFrac
-    Make3DMesh(volFrac=volFrac,rSphere=rSphere,dBox=dBox,name=name)
+    name = "./volFrac_%4.2f.xml" % volFrac
+    Make3DMesh(rSphere=rSphere,dBox=dBox,name=name)
     
 
 

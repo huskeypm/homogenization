@@ -229,6 +229,9 @@ def compute_eff_diff(domain):
       (d_eff[0],d_eff[1],parms.d)
   print "problem.volUnitCell", problem.volUnitCell
 
+  # thought I was already storing this somewhere
+  problem.volFrac = vol / problem.volUnitCell
+
   # normalize
   #nd_eff= d_eff/ np.linalg.norm(d_eff)
   #print "Deff (normalized) ", nd_eff
