@@ -1,6 +1,5 @@
 WARNING:
 1. DO NOT COMMIT UNTIL UNIT TESTS COMPLETE
-2. DO NOT MAKE ENTIRE CODE PUBLIC (need to branch in dev. stuff) 
 
 
 Unit tests (asserts thrown) 
