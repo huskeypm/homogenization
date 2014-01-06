@@ -210,7 +210,7 @@ class MolecularUnitDomain(Domain):
         print "Loading electrostatic potential from argument"
         psi = problem.psi
 
-      smol.ElectrostaticPMF(problem,psi,V=Vtemp,z=problem.q) # pmf stored internally             
+      smol.ElectrostaticPMF(problem,psi,V=Vtemp,q=problem.q) # pmf stored internally             
       #File("pmftest.pvd") << problem.psi
       #File("pmftest.pvd") << psi
       #quit()

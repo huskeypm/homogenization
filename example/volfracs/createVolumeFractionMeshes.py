@@ -3,10 +3,11 @@ For making simple sphere-centric meshes with prescribed volume
 fractions
 """
 
-path = "/net/home/huskeypm/Sources/homogenization/example/volfracs/"
+prefix ="/home/huskeypm/sources/"
+path = prefix+"/homogenization/example/volfracs/"
 import sys
-sys.path.append("/net/home/huskeypm/Sources/homogenization/example/volfracs/")
-sys.path.append("/net/home/huskeypm/bin/grids/")
+sys.path.append(prefix+"/homogenization/example/volfracs/")
+sys.path.append("/home/huskeypm/bin/grids/")
 #sys.path.append("/home/huskeypm/sources/smolfin/")
 from gamer import SurfaceMesh, GemMesh
 from meshmanipulate import *
