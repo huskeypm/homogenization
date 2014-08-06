@@ -1,5 +1,16 @@
-WARNING:
-1. DO NOT COMMIT UNTIL UNIT TESTS COMPLETE
+Purpose:
+
+For estimating diffusivity using homogenization theory 
+
+Prereq:
+  download smolfin (hg clone https://bitbucket.org/huskeypm/smolfin)
+  add smolfin directory to $PYTHONPATH (export PYTHONPATH=$PYTHONPATH:/path/smolfin) 
+
+
+Run:
+  python homog.py -case custom -molPrefix  example/volfracs/volFrac_0.50
+
+
 
 
 Unit tests (asserts thrown) 
@@ -10,8 +21,8 @@ To validate consistency:
   python homog.py -validation lattice
 
 
-To validate electro:
-  #python testVolFracs.py  -validation
-  This file is now part of the smolhomog source 
+Development 
+WARNING:
+1. DO NOT COMMIT UNTIL UNIT TESTS COMPLETE
 
 

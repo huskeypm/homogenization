@@ -89,6 +89,7 @@ class MolecularUnitDomain(Domain):
   def Setup(self):
     # mesh
     problem = self.problem
+    print "Attempting to load ", problem.fileMesh
     mesh = Mesh(problem.fileMesh)
     problem.mesh = mesh
     # mesh is in A, so converting to um

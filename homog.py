@@ -410,6 +410,7 @@ def Debug2():
 # I believe I partitioned this into Cell/Mol domain, as I expected both to occupy a representative unit cell 
 def SolveHomogSystem(debug=0,\
   root="./",\
+  addSuffix=True,
 #  cellPrefix="cell",molPrefix="mol",wholeCellPrefix="multi_clustered",\
   cellPrefix="none",molPrefix="none",wholeCellPrefix="none",\
 # use effective diffusion constant from molecular domain 
@@ -448,8 +449,13 @@ def SolveHomogSystem(debug=0,\
 
   # molecular domain
   if(molPrefix!="none"): 
-    meshFileInner = root+molPrefix+"_mesh.xml.gz"
-    subdomainFileInner = root+molPrefix+"_subdomains.xml.gz"
+    if addSuffix:
+      meshFileInner = root+molPrefix+"_mesh.xml.gz"
+      subdomainFileInner = root+molPrefix+"_subdomains.xml.gz"
+    else:
+      meshFileInner = root+molPrefix
+      subdomainFileInner = root+molPrefix
+
     if(smolMode==True):
       potentialFileInner = root+molPrefix+"_values.xml.gz"
     else: 
@@ -814,8 +820,10 @@ if __name__ == "__main__":
   run homogenized problem 
  
 Usage:
-  homog.py -case myofilament/globular/validationSphere/custom <-smol> <-molGamer>
+  homog.py -case myofilament/globular/validationSphere/custom/run <-smol> <-molGamer>
            <-molPrefix molPrefix> <-validation all/etc> <-boundaryTol float>
+           or 
+           <-file filename.xml>
 
   where 
     -smol - run molecular domain with electrostatics
@@ -849,6 +857,9 @@ Notes:
 
     if(arg=="-validation"):
       validationMode=sys.argv[i+1]
+
+    if(arg=="-file"):
+      fileName = sys.argv[i+1]
 
     if(arg=="-boundaryTol"):
       boundaryTolerance=float(sys.argv[i+1])
@@ -918,6 +929,18 @@ Notes:
     r=results.molDomUnit.problem.d_eff    
     #r = r/np.linalg.norm(r)
     #print r
+  elif(case=="run"):
+    root = "./"
+    molPrefix = fileName
+    results = SolveHomogSystem(debug=debug,\
+      root=root,\
+      addSuffix=False,
+      cellPrefix=cellPrefix, molPrefix=molPrefix,\
+      wholeCellPrefix=wholeCellPrefix,\
+      smolMode = smolMode,
+      molGamer=molGamer)
+    r=results.molDomUnit.problem.d_eff
+
 
   else:
     msg = "Case " + case + " not understood"   
