@@ -42,9 +42,11 @@ EPS = 1.e-10
 # calculate concentration
 def CalcConc(domain):
   problem = domain.problem
+  mesh = problem.mesh 
   if(domain.gamer==0):
-    problem.conc = assemble( problem.x[0] * dx,mesh=problem.mesh)
+    problem.conc = assemble( problem.x[0] * dx(domain=mesh))
   else:
+    raise RuntimeError("add") 
     problem.conc = assemble( problem.x[0] * dx(1),mesh=problem.mesh)
 
   #problem.conc /= assemble( Constant(1)*dx,mesh=problem.mesh)
@@ -135,7 +137,7 @@ def solveHomog(domain,smolMode=False):
 
   Vs = FunctionSpace(mesh,"CG",1)
   up = project(x[0],V=Vs)    
-  ar=np.asarray(up.vector())
+  #ar=np.asarray(up.vector())
 
 
   problem.up.vector()[:] = problem.x.vector()[:]
@@ -162,7 +164,7 @@ def compute_eff_diff(domain):
   if(domain.gamer==1):
     dx_int = dx(1)
   else:
-    dx_int = dx
+    dx_int = dx(domain=mesh)
 
   Vscalar = FunctionSpace(mesh,"CG",1)
   us = TrialFunction(Vscalar)
@@ -199,7 +201,7 @@ def compute_eff_diff(domain):
   
     omegas[i] = assemble(form)
   
-  vol = assemble( Constant(1)*dx_int, mesh=mesh )
+  vol = assemble( Constant(1)*dx_int)#, mesh=mesh )
   
 
   print "omegasO"

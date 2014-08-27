@@ -183,12 +183,15 @@ class Domain(object):
 
   def CalcGeom(self,problem):
     # SA
+    mesh = problem.mesh
     if(self.gamer==0):
-      areaExpr = Constant(1.) * ds
+      areaExpr = Constant(1.) * ds(domain=mesh)
     if(self.gamer==1):
-      print "WARNING: need to automatically integtrate over all surfs"
+      raise RuntimeError("WARNING: need to automatically integtrate over all surfs")
       areaExpr = Constant(1.)*ds(1) + Constant(1.)*ds(5)
-    area = assemble(areaExpr, mesh=problem.mesh)
+      
+    # 
+    area = assemble(areaExpr)#, mesh=problem.mesh)
 
     problem.surfaceArea = area
     # this is the 'beta' term in the Goel papers 
@@ -196,8 +199,10 @@ class Domain(object):
 
     # VOL 
     if(self.gamer==0):
-      vol = assemble(Constant(1.) * dx, mesh=problem.mesh)
+      #vol = assemble(Constant(1.) * dx, mesh=problem.mesh)
+      vol = assemble(Constant(1.) * dx(domain=mesh))
     if(self.gamer==1):
+      raise RuntimeError("Need to add support") 
       vol = assemble(Constant(1.) * dx(1), mesh=problem.mesh)
     problem.volume = vol
     print "Volume: %e [um^3]" % vol  
