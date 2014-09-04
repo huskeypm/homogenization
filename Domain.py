@@ -187,8 +187,8 @@ class Domain(object):
     if(self.gamer==0):
       areaExpr = Constant(1.) * ds(domain=mesh)
     if(self.gamer==1):
-      raise RuntimeError("WARNING: need to automatically integtrate over all surfs")
-      areaExpr = Constant(1.)*ds(1) + Constant(1.)*ds(5)
+      raise RuntimeError("I don't think is is working for gamer correctl")
+      areaExpr = Constant(1.)*ds(1,domain=mesh) + Constant(1.)*ds(5,domain=mesh)
       
     # 
     area = assemble(areaExpr)#, mesh=problem.mesh)
@@ -202,8 +202,8 @@ class Domain(object):
       #vol = assemble(Constant(1.) * dx, mesh=problem.mesh)
       vol = assemble(Constant(1.) * dx(domain=mesh))
     if(self.gamer==1):
-      raise RuntimeError("Need to add support") 
-      vol = assemble(Constant(1.) * dx(1), mesh=problem.mesh)
+      #raise RuntimeError("Need to add support") 
+      vol = assemble(Constant(1.) * dx(1,domain=mesh), mesh=problem.mesh)
     problem.volume = vol
     print "Volume: %e [um^3]" % vol  
 

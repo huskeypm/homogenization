@@ -18,6 +18,7 @@ To validate accuracy:
   TO DO. validated against Aurialt's geometry, so should revive this 
 
 To validate consistency:
+  python validate.py -validation 
   python homog.py -validation lattice
 
 
