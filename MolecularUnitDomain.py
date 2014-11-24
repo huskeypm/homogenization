@@ -89,7 +89,8 @@ class MolecularUnitDomain(Domain):
   def Setup(self):
     # mesh
     problem = self.problem
-    print "Attempting to load ", problem.fileMesh
+    if MPI.rank(mpi_comm_world())==0:
+      print "Attempting to load ", problem.fileMesh
     mesh = Mesh(problem.fileMesh)
     problem.mesh = mesh
     # mesh is in A, so converting to um
@@ -98,14 +99,15 @@ class MolecularUnitDomain(Domain):
 
     utilObj=self.utilObj
     utilObj.GeometryInitializations()
-    utilObj.DefinePBCMappings()
+    # PKH PBC Not used anymore 
+    #utilObj.DefinePBCMappings()
 
     if(self.type=="scalar"):
         problem.V = FunctionSpace(mesh,"CG",1)
     elif(self.type=="field"):
         problem.V = VectorFunctionSpace(mesh,"CG",1)
 
-    print "Not loading subdomains, since don't think they're needed"
+    #print "Not loading subdomains, since don't think they're needed"
     #problem.subdomains = MeshFunction(
     #  "uint", mesh, problem.fileSubdomains)
     #self.markers = [1,4,5]

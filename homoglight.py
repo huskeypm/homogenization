@@ -12,10 +12,11 @@ def runHomog(fileXML="test.xml",psi="none",smolMode=False,q=0,verbose=False,\
   solve_homogeneous_unit(molDomUnit,smolMode=smolMode,solver=solver)
 
   problem = molDomUnit.problem
-  if(verbose):
-    print problem.volume
-    print problem.volUnitCell
-    print problem.d_eff
+  if(verbose and MPI.rank(mpi_comm_world())==0):
+    print "From master node:" 
+    print "vol domain:", problem.volume
+    print "vol unit cell:", problem.volUnitCell
+    print "Deff:", problem.d_eff
   return problem 
 
 

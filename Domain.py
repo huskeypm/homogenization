@@ -195,7 +195,6 @@ class Domain(object):
 
     problem.surfaceArea = area
     # this is the 'beta' term in the Goel papers 
-    print "SA: %e [um^2]" % area
 
     # VOL 
     if(self.gamer==0):
@@ -205,13 +204,15 @@ class Domain(object):
       #raise RuntimeError("Need to add support") 
       vol = assemble(Constant(1.) * dx(1,domain=mesh), mesh=problem.mesh)
     problem.volume = vol
-    print "Volume: %e [um^3]" % vol  
+    #print "SA: %e [um^2]" % area
+    #print "Volume: %e [um^3]" % vol  
 
     (boundsMin,boundIdxMin,boundsMax,boundIdxMax) = self.utilObj.CalcBounds(problem.mesh) 
     diff = boundsMax-boundsMin
     totVol = np.product(diff)
-    print "Total volume (assuming rectangular): %e [um^3]" % totVol
-    print "volume fraction (assuming rectangular): %e [um^3]" % (vol/totVol)
+    if MPI.rank(mpi_comm_world())==0:
+      print "Total volume (assuming rectangular): %e [um^3]" % totVol
+      print "volume fraction (assuming rectangular): %e [um^3]" % (vol/totVol)
     problem.volUnitCell = totVol
     
 

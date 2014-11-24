@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 from dolfin import *
 from params import *
 parms = params()
-parms.d = 1.0 ; print "WARNING: overriding parms (conflicting w smol on vm)"
+parms.d = 1.0 ; #print "WARNING: overriding parms (conflicting w smol on vm)"
 from util import *
 import numpy as np
 
@@ -123,18 +123,46 @@ def solveHomog(domain,smolMode=False,solver="gmres"):
   L = RHS
 
   
-  # Compute solution
-  x = Function(V)
+  ## Compute solution
+  #solverType="original"
+  solverType="krylov"
   #solve(a == L, x, problem.bcs)
-  lvproblem = LinearVariationalProblem(a,L, x, bcs=problem.bcs)
-  solver = LinearVariationalSolver(lvproblem)
-  # solver
-  print "Solving with ", solverMode
-  solver.parameters["linear_solver"] = solverMode
-  #solver.parameters["preconditioner"] = "ilu"
-  #print "Using amg preconditioner instead of ilu"
-  solver.parameters["preconditioner"] = "amg"
-  solver.solve()
+  if solverType=="original":
+    lvproblem = LinearVariationalProblem(a,L, x, bcs=problem.bcs)
+    solver = LinearVariationalSolver(lvproblem)
+    solver.parameters["linear_solver"] = "gmres"
+    #solver.parameters["preconditioner"] = "ilu"
+    #print "Using amg preconditioner instead of ilu"
+    solver.parameters["preconditioner"] = "amg"
+    #solver.parameters["newton_solver"]["linear_solver"] = "mumps"
+    x = Function(V)
+    solver.solve(x.vector())
+
+  elif solverType=="krylov":
+    #print "NOW USING KRYLOV SOLVER (from stokes-iterative example)" 
+    #print "WARNING: made a random qguess as to what to use for the preconditioner [used basic diff eqn, no delta term]"
+    # Form for use in constructing preconditioner matrix
+    #b = inner(Atilde*(grad(u) + Delta), grad(v))*dx
+    b = inner(Atilde*(grad(u)), grad(v))*dx
+
+
+    # Assemble system
+    A, bb = assemble_system(a, L, problem.bcs)
+
+    # Assemble preconditioner system
+    P, btmp = assemble_system(b, L, problem.bcs)
+
+    # Create Krylov solver and AMG preconditioner
+    solver = KrylovSolver("minres", "amg")
+ 
+    # Associate operator (A) and preconditioner matrix (P)
+    solver.set_operators(A, P)
+
+    x = Function(V)
+    solver.solve(x.vector(),bb)
+
+  #print solver.parameters
+
 
   problem.x = x
   problem.up = Function(problem.V)   
@@ -152,7 +180,8 @@ def solveHomog(domain,smolMode=False,solver="gmres"):
 
   # save unprojected soln instead 
   fileName = problem.outpath + problem.name+"_unit.pvd"
-  print "Writing ",fileName
+  if MPI.rank(mpi_comm_world())==0:
+    print "Writing ",fileName
   #File(fileName) <<  problem.x   
   File(fileName) <<  problem.up
 
@@ -198,6 +227,7 @@ def compute_eff_diff(domain):
     outname = "diff%d.pvd" % i
 
    
+    #print "Solve for estimating Omegas" 
     solve(us*vs*dx_int==grad_Xi_component*vs*dx_int, D_eff_project)
     #File(outname)<<D_eff_project
   
@@ -208,8 +238,8 @@ def compute_eff_diff(domain):
   vol = assemble( Constant(1)*dx_int)#, mesh=mesh )
   
 
-  print "omegasO"
-  print omegas
+  if MPI.rank(mpi_comm_world())==0:
+    print "omegasO ",omegas
   #print omegas/vol
   #problem.omv = omegas/vol
   #problem.domv = parms.d*omegas/vol
@@ -221,19 +251,16 @@ def compute_eff_diff(domain):
   
   #print "WARNING: what is gamma?" 
   #omegas /= problem.gamma
-  print "omegas"
-  print omegas
   d_eff = parms.d*omegas
-
-  print "Reweighting by unit cell vol"
   d_eff /= problem.volUnitCell
-  if(dim==3):
+  if MPI.rank(mpi_comm_world())==0:
+   if(dim==3):
     print "d_eff= [%4.2f,%4.2f,%4.2f] for d=%4.2f"%\
       (d_eff[0],d_eff[1],d_eff[2],parms.d)
-  else: 
+   else: 
     print "d_eff= [%4.2f,%4.2f] for d=%4.2f"%\
       (d_eff[0],d_eff[1],parms.d)
-  print "problem.volUnitCell", problem.volUnitCell
+   print "problem.volUnitCell", problem.volUnitCell
 
   # thought I was already storing this somewhere
   problem.volFrac = vol / problem.volUnitCell

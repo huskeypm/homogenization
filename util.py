@@ -38,34 +38,25 @@ class util:
   def CalcBounds(self,mesh):
     prob = self.prob
   
-    coords = mesh.coordinates()
-    prob.nDims = (np.shape(coords))[1]
-  
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    prob.nDims = np.shape(mesh.coordinates())[1]
     boundsMin=np.zeros(prob.nDims)
     boundsMax=np.zeros(prob.nDims)
-    boundIdxMin=np.zeros(prob.nDims,"int")
-    boundIdxMax=np.zeros(prob.nDims,"int")
-  
-    boundsMin[0] = coords[:,0].min()
-    boundIdxMin[0] = coords[:,0].argmin()
-    boundsMax[0] = coords[:,0].max()
-    boundIdxMax[0] = coords[:,0].argmax()
-    
-    boundsMin[1] = coords[:,1].min()
-    boundIdxMin[1] = coords[:,1].argmin()
-    boundsMax[1] = coords[:,1].max()
-    boundIdxMax[1] = coords[:,1].argmax()
-    
-    if(prob.nDims==3):
-      boundsMin[2] = coords[:,2].min()
-      boundIdxMin[2] = coords[:,2].argmin()
-      boundsMax[2] = coords[:,2].max()
-      boundIdxMax[2] = coords[:,2].argmax()
+
+    # need to use 'gather' to poll all the CPUs for their parts of the mesh
+    for i in range(prob.nDims):
+      tag = "x[%d]"%i
+      u = interpolate(Expression(tag), V)
+      x = Vector()
+      u.vector().gather(x, np.array(range(V.dim()), "intc"))
+      boundsMin[i] =np.min(x.array())
+      boundsMax[i] =np.max(x.array())
 
     prob.boundsMin = boundsMin
     prob.boundsMax = boundsMax
-  
-    return (boundsMin,boundIdxMin,boundsMax,boundIdxMax)
+
+    #return (boundsMin,boundIdxMin,boundsMax,boundIdxMax)
+    return (boundsMin,-1,boundsMax,-1)
   
   def CalcMidpoint(self,mesh):
     (boundsMin,boundIdxMin,boundsMax,boundIdxMax) = self.CalcBounds(mesh)

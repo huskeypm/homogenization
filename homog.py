@@ -81,7 +81,7 @@ class empty:pass
 
 ## solv. homog cell
 def solve_homogeneous_unit(domain,type="field",debug=0,smolMode=False,solver="gmres"):
-  print "WARNING: assuming D=1."
+  #print "WARNING: assuming D=1."
   parms.D = 1.0
   problem = domain.problem
 

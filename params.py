@@ -27,7 +27,7 @@ class params:
     self.d = d # [um^2/s] ??  
     self.concInitial = 0.1 # [uM]
     #self.ANG_TO_UM = 1e-4
-    print "WARNING: removed ANG TO UM" 
+    #print "WARNING: removed ANG TO UM" 
     self.Ang_to_um = 1     
     self.dt = 0.001
     self.tStep = 20
