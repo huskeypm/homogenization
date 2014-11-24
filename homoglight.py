@@ -2,14 +2,14 @@
 
 from homog  import *
 def runHomog(fileXML="test.xml",psi="none",smolMode=False,q=0,verbose=False,\
-             gamer=0,reflectiveBoundary="none"):
+             gamer=0,reflectiveBoundary="none",solver="gmres"):
   fileSubdomains = "none"
   molDomUnit = MolecularUnitDomain(fileXML,fileSubdomains,\
                  reflectiveBoundary=reflectiveBoundary,gamer=gamer,\
-    psi=psi,q=q)
+                 psi=psi,q=q)
   molDomUnit.Setup()
   molDomUnit.AssignBC()
-  solve_homogeneous_unit(molDomUnit,smolMode=smolMode)
+  solve_homogeneous_unit(molDomUnit,smolMode=smolMode,solver=solver)
 
   problem = molDomUnit.problem
   if(verbose):
@@ -49,17 +49,17 @@ Notes:
       raise RuntimeError(msg)
 
   fileIn= sys.argv[1]
-  if(len(sys.argv)==3):
-    print "arg"
-
+  solver="gmres"
   fileXML = "none" 
   for i,arg in enumerate(sys.argv):
     if(arg=="-file"):
       fileXML=sys.argv[i+1] 
+    if(arg=="-mumps"):
+      solver="mumps"
 
 
 
-  runHomog(fileXML,verbose=True)
+  runHomog(fileXML,verbose=True,solver=solver)
 
 
 

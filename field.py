@@ -61,7 +61,9 @@ def CalcConc(domain):
 # Using first-order representation from Higgins paper ()
 # type - scalar is valid only for certain cases
 # smol - add in smol. approach 
-def solveHomog(domain,smolMode=False):     
+# solverMode - gmres/mumps
+def solveHomog(domain,smolMode=False,solver="gmres"):     
+  solverMode = solver 
   # mesh
   problem = domain.problem
   problem.smolMode=smolMode
@@ -126,9 +128,11 @@ def solveHomog(domain,smolMode=False):
   #solve(a == L, x, problem.bcs)
   lvproblem = LinearVariationalProblem(a,L, x, bcs=problem.bcs)
   solver = LinearVariationalSolver(lvproblem)
-  solver.parameters["linear_solver"] = "gmres"
-  solver.parameters["preconditioner"] = "ilu"
-  print "Using amg preconditioner instead of ilu"
+  # solver
+  print "Solving with ", solverMode
+  solver.parameters["linear_solver"] = solverMode
+  #solver.parameters["preconditioner"] = "ilu"
+  #print "Using amg preconditioner instead of ilu"
   solver.parameters["preconditioner"] = "amg"
   solver.solve()
 

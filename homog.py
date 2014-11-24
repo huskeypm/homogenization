@@ -39,7 +39,6 @@ from dolfin import *
 import numpy as np
 from params import *
 parms = params() # conflicts with params from smol
-import matplotlib.pyplot as plt
 
 # classes
 from CellularDomain import *
@@ -81,7 +80,7 @@ root = "/home/huskeypm/scratch/homog/"
 class empty:pass
 
 ## solv. homog cell
-def solve_homogeneous_unit(domain,type="field",debug=0,smolMode=False):
+def solve_homogeneous_unit(domain,type="field",debug=0,smolMode=False,solver="gmres"):
   print "WARNING: assuming D=1."
   parms.D = 1.0
   problem = domain.problem
@@ -108,7 +107,7 @@ def solve_homogeneous_unit(domain,type="field",debug=0,smolMode=False):
 
   # using vector fields 
   elif (type=="field"):
-    field.solveHomog(domain,smolMode=smolMode)
+    field.solveHomog(domain,smolMode=smolMode,solver=solver)
     d_eff = field.compute_eff_diff(domain)
 
   else:
@@ -617,6 +616,7 @@ def ValidationLayered(mode):
     analy = -1 * (ys ) + np.min(ys) + 1 # shifting, since aribtraty constant 
 
    
+    import matplotlib.pyplot as plt
     plt.figure()
     plt.plot(ys,analy,"b-",label="Analytical")
     plt.plot(gy[0,:],interp1,"k.",label="Predicted") 
@@ -665,6 +665,7 @@ def ValidationLattice():
       allsummary.append(summary)
 
     # plot 
+    import matplotlib.pyplot as plt
     plt.figure()
     plt.plot(molEdges,allResults.norms,'k--')
     plt.scatter(molEdges,allResults.norms)
