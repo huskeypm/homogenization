@@ -133,7 +133,8 @@ def build_steadystate(theDomain):
   problem.x.vector()[:] = parms.concInitial
 
   outname =outbase+problem.name+"_homogenized_stdy.pvd"
-  print "Writing outputs to %s" % outname 
+  if MPI.rank(mpi_comm_world())==0:
+    print "Writing outputs to %s" % outname 
   out = File(outname) 
 
   # assign 
@@ -230,7 +231,9 @@ def build_timedep(theDomain,tag=""):
   problem.x.vector()[:] = xS[:]
 
   outname =outbase+tag+problem.name+"_homogenized_tdep.pvd"
-  print "Writing outputs to %s" % outname 
+  if MPI.rank(mpi_comm_world())==0:
+    print "Writing outputs to %s" % outname 
+  #print "Writing outputs to %s" % outname 
   out = File(outname) 
 
   # make assignments
@@ -287,7 +290,8 @@ def solve_homogenized_whole(wholecellDomain,unitcellDomain,unitmolDomain,type="f
 
   ## molecular domain (steady state)
   if(wholeCellOnly!=0):
-    print "Solving molecular steady state..."
+    if MPI.rank(mpi_comm_world())==0:
+      print "Solving molecular steady state..."
     build_steadystate(unitmolDomain)
 
   ## Wholecell
@@ -492,7 +496,7 @@ def SolveHomogSystem(debug=0,\
     print "Solving cellular unit cell using %s" % meshFileOuter
     solve_homogeneous_unit(cellDomUnit,type="field",debug=debug)
   else:
-    print "WARNING: Using stored d_eff for cell" 
+    #print "WARNING: Using stored d_eff for cell" 
     cellDomUnit.problem.d_eff = np.array([1,1,1])
 
   # molecular 
@@ -501,7 +505,7 @@ def SolveHomogSystem(debug=0,\
     molDomUnit.smolMode = smolMode
     solve_homogeneous_unit(molDomUnit,type="field",debug=debug,smolMode=smolMode)
   else:
-    print "WARNING: Using stored d_eff for mol"   
+    #int "WARNING: Using stored d_eff for mol"   
     molDomUnit.problem.d_eff = np.array([1,1,1])
 
      
@@ -839,7 +843,8 @@ Notes:
   if len(sys.argv) < 2:
       raise RuntimeError(msg)
   
-  print "Writing outputs to %s" % outbase
+  if MPI.rank(mpi_comm_world())==0:
+    print "Writing outputs to %s" % outname 
   #print "WARNING: files arent writing!"
 
   for i,arg in enumerate(sys.argv):

@@ -300,11 +300,11 @@ if __name__ == "__main__":
 
   fileIn= sys.argv[1]
   if(len(sys.argv)==3):
-    print "arg"
+    1
 
 
 
-
+  print "DOES NOT YIELD CORRECT ANSWERS FOR MPI" 
   doit(fileIn)
 
 

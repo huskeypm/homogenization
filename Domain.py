@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ----------------------------------------------------------------------------
 """
 from dolfin import *
-from util import *
+from homogutil import *
 import numpy as np
 class empty:pass
 
@@ -129,7 +129,7 @@ class Domain(object):
     problem.init = 1
     problem.EPS = EPS 
 
-    self.utilObj = util(problem)
+    self.utilObj = homogutil(problem)
     self.type = type
     self.gamer = 0 # meshes recorded by gamer are marked differently
     self.problem = problem

@@ -31,7 +31,7 @@ import numpy as np
 ### Class for dealing with various geometric issues (bounds, pairing between vertices) 
 ### 
 
-class util: 
+class homogutil: 
   def __init__(self,problem=0):
     self.prob = problem 
 
