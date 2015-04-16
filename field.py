@@ -30,7 +30,8 @@ from dolfin import *
 from params import *
 parms = params()
 parms.d = 1.0 ; #print "WARNING: overriding parms (conflicting w smol on vm)"
-from util import *
+# PKH not sure if this will work 
+from homogutil import *
 import numpy as np
 
 
