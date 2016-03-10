@@ -91,7 +91,7 @@ def solveHomog(domain,smolMode=False,solver="gmres"):
     Vscalar = FunctionSpace(mesh,"CG",1)
     intfact = Function(Vscalar)
     intfact.vector()[:]    =    np.exp(-parms.beta * problem.pmf.vector()[:])
-    print "WARTNINtg: can get veriy high pmf values that may present problems for numberial solver" )  
+    print "WARTNINtg: can get veriy high pmf values that may present problems for numberial solver" 
     pm = np.asarray(problem.pmf.vector()[:]); print "pmf Min/Max %f,%f "  % (np.min(pm),np.max(pm))
     
     ifact = np.asarray(intfact.vector()[:])
