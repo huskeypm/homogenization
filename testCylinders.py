@@ -4,7 +4,8 @@ fractions
 """
 
 import sys
-sys.path.append("/home/huskeypm/sources/homogenization/")
+sys.path.append("/home/AD/pmke226/sources/homogenization/")
+sys.path.append("/home/AD/pmke226/sources/smolfin/")
 #
 
 import numpy as np
@@ -94,7 +95,7 @@ def doit():
   # plot 
   D=1.
   phi=vfracs
-  hsLimit = D*phi/(2-phi)
+  hsLimit = D*phi/(2-phi) # is this the lower bound? [Believe this is actually a maxwell garnet bound. I have some discussion on this in 130709_cylinders.tex] 
   import matplotlib.pylab as plt
   plt.plot(phi,hsLimit,'k-',linewidth=1,label="HS limit")
   plt.plot(phi,deffTs,'k.',linewidth=2,label="Deff transverse")

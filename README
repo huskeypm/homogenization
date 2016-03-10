@@ -20,6 +20,7 @@ To validate accuracy:
 To validate consistency:
   python validate.py -validation 
   python homog.py -validation lattice
+  python testCylinders.py -run # compare w http://www.cell.com/cms/attachment/2009202989/2031752905/mmc1.pdf
 
 
 Development 

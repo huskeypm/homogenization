@@ -4,6 +4,8 @@ from homog  import *
 def runHomog(fileXML="test.xml",psi="none",smolMode=False,q=0,verbose=False,\
              gamer=0,reflectiveBoundary="none",solver="gmres"):
   fileSubdomains = "none"
+  psiVals = np.asarray(psi.vector()[:])
+  #print "Min/Max potent", np.min(psiVals), np.max(psiVals)
   molDomUnit = MolecularUnitDomain(fileXML,fileSubdomains,\
                  reflectiveBoundary=reflectiveBoundary,gamer=gamer,\
                  psi=psi,q=q)
